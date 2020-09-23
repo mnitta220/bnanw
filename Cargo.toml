@@ -1,0 +1,37 @@
+[package]
+name = "bnanw"
+version = "0.1.0"
+authors = ["Masahiro Nitta <mnitta220@gmail.com>"]
+edition = "2018"
+description = "文章暗記 WebAssembly プロジェクト"
+repository = "https://github.com/mnitta220/bnanw"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+js-sys = "0.3.45"
+wasm-bindgen = "0.2.68"
+wasm-bindgen-futures = "0.4.18"
+
+[dependencies.web-sys]
+version = "0.3.45"
+features = [
+	'Attr',
+	'console',
+	'Document',
+	'DomTokenList',
+	'Element',
+	'HtmlElement',
+	'NamedNodeMap',
+	'Node',
+	'NodeList',
+	'Window',
+  'CanvasRenderingContext2d',
+  'HtmlCanvasElement',
+  'TextMetrics',
+  'Storage',
+	'FontFace',
+	'FontFaceSet',
+]
