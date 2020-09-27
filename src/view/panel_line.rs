@@ -74,7 +74,7 @@ impl PanelLine {
       source: seq,
       ty: ty,
       indent: 0.0,
-      align: source::Align::Chitsuki,
+      align: source::Align::Bottom,
       x1: 0.0,
       y1: 0.0,
       x2: 0.0,
@@ -620,7 +620,7 @@ impl PanelLine {
 
           if l.last {
             match l.align {
-              source::Align::Center | source::Align::Chitsuki => {
+              source::Align::Center | source::Align::Bottom => {
                 let mut w: f64 = 0.0;
 
                 for t in &l.ptokens {
@@ -634,6 +634,8 @@ impl PanelLine {
                 } else {
                   y += w;
                 }
+
+                y1 = y;
               }
 
               _ => {}
@@ -982,7 +984,7 @@ impl PanelLine {
 
           if l.last {
             match l.align {
-              source::Align::Center | source::Align::Chitsuki => {
+              source::Align::Center | source::Align::Bottom => {
                 let mut w: f64 = 0.0;
 
                 for t in &l.ptokens {
@@ -996,6 +998,8 @@ impl PanelLine {
                 } else {
                   x += w;
                 }
+
+                x1 = x;
               }
 
               _ => {}

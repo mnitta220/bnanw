@@ -6,7 +6,7 @@ pub enum Align {
   // 中寄せ
   Center,
   // 地付き（横書きなら右寄せ、縦書きなら下寄せ）
-  Chitsuki,
+  Bottom,
   // なし
   None,
 }
@@ -15,7 +15,7 @@ impl fmt::Display for Align {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     match *self {
       Align::Center => write!(f, "Center"),
-      Align::Chitsuki => write!(f, "Chitsuki"),
+      Align::Bottom => write!(f, "Bottom"),
       Align::None => write!(f, "None"),
     }
   }
@@ -127,7 +127,7 @@ impl Source {
         '》' => {
           if i == 0 {
             // 行頭に 》があれば、地付きとする。
-            self.align = Align::Chitsuki;
+            self.align = Align::Bottom;
           } else if i == 1 && c1 == '《' {
             // 行頭に 《》があれば、中寄せとする。
             self.align = Align::Center;
@@ -189,8 +189,26 @@ impl Source {
         }
 
         // 全角記号
-        '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［' | '］' | '｛' | '｝' | '…'
-        | '─' | '━' | 'ー' | '＝' | '～' | '：' => {
+        '「'
+        | '」'
+        | '『'
+        | '』'
+        | '（'
+        | '）'
+        | '【'
+        | '】'
+        | '［'
+        | '］'
+        | '｛'
+        | '｝'
+        | '…'
+        | '─'
+        | '━'
+        | 'ー'
+        | '＝'
+        | '～'
+        | '：'
+        | '←'..='⇿' => {
           if buf_type != token::TokenType::Zenkigo && buf_type != token::TokenType::None {
             token = token::Token::new(buf_type, buf.as_ref());
             self.tokens.push(token);
@@ -305,7 +323,7 @@ impl Source {
 
           if i == 0 {
             // 行頭に 》があれば、地付きとする。
-            self.align = Align::Chitsuki;
+            self.align = Align::Bottom;
           } else if i == 1 && c1 == '《' {
             // 行頭に 《》があれば、中寄せとする。
             self.align = Align::Center;
