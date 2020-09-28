@@ -101,7 +101,7 @@ impl panel::Panel for PanelSection {
         x += diff;
 
         for l in &self.plines {
-          match l.print_lines(
+          match l.draw_line(
             x,
             cv,
             areas,
@@ -132,7 +132,7 @@ impl panel::Panel for PanelSection {
         y += diff;
 
         for l in &self.plines {
-          match l.print_lines(
+          match l.draw_line(
             y,
             cv,
             areas,
@@ -455,7 +455,7 @@ impl panel::Panel for PanelSection {
 
 impl PanelSection {
   /// 黒塗りを移動する
-  pub fn black_step(&mut self, mt: MoveType) -> Result<isize, &'static str> {
+  pub fn black_step(&mut self, mt: MoveType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
     /*
     log!(
       "***black_step start self.black_source={} self.black_token={}",
@@ -463,56 +463,84 @@ impl PanelSection {
       self.black_token
     );
     */
+    let lw = cv.met + cv.ruby_w + cv.line_margin;
+    let margin = lw * 2.1;
 
     match mt {
       // 1区切り進む
       MoveType::FdSlash => {
         let mut s: i32 = 0;
+        let mut p: usize = 0;
 
-        for l in &self.plines {
-          if s == 0 && l.source == self.black_source {
+        for pl in &self.plines {
+          if s == 0 && pl.source == self.black_source {
             // 現在の行が見つかった。
             s = 1;
           }
 
-          if s > 0 {
-            for t in &l.ptokens {
-              match s {
-                1 => {
-                  if t.seq == self.black_token {
-                    // 現在のトークンが見つかった。
-                    s = 2;
-                  }
-                }
-
-                2 => {
-                  match t.ty {
-                    token::TokenType::Alpha
-                    | token::TokenType::Kana
-                    | token::TokenType::Zenkaku => {
-                      // 次の文字が見つかった。
-                      s = 3;
+          if pl.lines.len() == 0 {
+            p += 1;
+          } else {
+            for vl in &pl.lines {
+              for pt in &vl.ptokens {
+                match s {
+                  1 => {
+                    if pt.seq == self.black_token {
+                      // 現在のトークンが見つかった。
+                      s = 2;
                     }
-                    _ => {}
                   }
+
+                  2 => {
+                    match pt.ty {
+                      token::TokenType::Alpha
+                      | token::TokenType::Kana
+                      | token::TokenType::Yousoku
+                      | token::TokenType::Zenkaku => {
+                        // 次の文字が見つかった。
+                        s = 3;
+                      }
+                      _ => {}
+                    }
+                  }
+
+                  3 => {
+                    if pt.ty == token::TokenType::Slash {
+                      // スラッシュが見つかった。
+                      self.black_source = pl.source;
+                      self.black_token = pt.seq;
+                      s = 4;
+
+                      if self.is_vertical {
+                        let x = lw * p as f64;
+
+                        if self.pos + cv.width - x - margin < 0.0 {
+                          self.pos = x + margin - cv.width;
+                        }
+                      } else {
+                        let y = lw * p as f64;
+
+                        if self.pos + y + margin > cv.height {
+                          self.pos = cv.height - y - margin;
+                        }
+                      }
+                      break;
+                    }
+                  }
+                  _ => {}
                 }
 
-                3 => {
-                  if t.ty == token::TokenType::Slash {
-                    // スラッシュが見つかった。
-                    self.black_source = l.source;
-                    self.black_token = t.seq;
-                    s = 4;
-                    break;
-                  }
+                if s == 4 {
+                  break;
                 }
-                _ => {}
               }
-            }
 
-            if s == 4 {
-              break;
+              p += 1;
             }
+          }
+
+          if s == 4 {
+            break;
           }
         }
 
@@ -524,6 +552,20 @@ impl PanelSection {
 
             _ => {
               self.black_source = 1;
+            }
+          }
+
+          if self.is_vertical {
+            let x = lw * p as f64;
+
+            if self.pos + cv.width - x - margin < 0.0 {
+              self.pos = x + margin - cv.width;
+            }
+          } else {
+            let y = lw * p as f64;
+
+            if self.pos + y + margin > cv.height {
+              self.pos = cv.height - y - margin;
             }
           }
 
@@ -582,6 +624,7 @@ impl PanelSection {
                   match self.plines[j].ptokens[i].ty {
                     token::TokenType::Alpha
                     | token::TokenType::Kana
+                    | token::TokenType::Yousoku
                     | token::TokenType::Zenkaku => {
                       // 次の文字が見つかった。
                       s = 3;
@@ -628,64 +671,92 @@ impl PanelSection {
       // 1単語進む
       MoveType::FdOne => {
         let mut s: i32 = 0;
+        let mut p: usize = 0;
 
-        for l in &self.plines {
-          if s == 0 && l.source == self.black_source {
+        for pl in &self.plines {
+          if s == 0 && pl.source == self.black_source {
             // 現在の行が見つかった。
             s = 1;
           }
 
-          if s > 0 {
-            for t in &l.ptokens {
-              match s {
-                1 => {
-                  if t.seq == self.black_token {
-                    // 現在のトークンが見つかった。
-                    s = 2;
+          if pl.lines.len() == 0 {
+            p += 1;
+          } else {
+            for vl in &pl.lines {
+              for pt in &vl.ptokens {
+                match s {
+                  1 => {
+                    if pt.seq == self.black_token {
+                      // 現在のトークンが見つかった。
+                      s = 2;
 
-                    match t.ty {
+                      match pt.ty {
+                        token::TokenType::Alpha
+                        | token::TokenType::Kana
+                        | token::TokenType::Yousoku
+                        | token::TokenType::Zenkaku => {
+                          // 現在の文字が見つかった。
+                          s = 3;
+                        }
+                        _ => {}
+                      }
+                    }
+                  }
+
+                  2 => {
+                    match pt.ty {
                       token::TokenType::Alpha
                       | token::TokenType::Kana
+                      | token::TokenType::Yousoku
                       | token::TokenType::Zenkaku => {
                         // 現在の文字が見つかった。
                         s = 3;
                       }
+
                       _ => {}
                     }
                   }
-                }
 
-                2 => {
-                  match t.ty {
-                    token::TokenType::Alpha
-                    | token::TokenType::Kana
-                    | token::TokenType::Zenkaku => {
-                      // 現在の文字が見つかった。
-                      s = 3;
+                  3 => {
+                    match pt.ty {
+                      token::TokenType::Alpha
+                      | token::TokenType::Kana
+                      | token::TokenType::Yousoku
+                      | token::TokenType::Zenkaku => {
+                        // 次の文字が見つかった。
+                        s = 4;
+                        self.black_source = pl.source;
+                        self.black_token = pt.seq;
+
+                        if self.is_vertical {
+                          let x = lw * p as f64;
+
+                          if self.pos + cv.width - x - margin < 0.0 {
+                            self.pos = x + margin - cv.width;
+                          }
+                        } else {
+                          let y = lw * p as f64;
+
+                          if self.pos + y + margin > cv.height {
+                            self.pos = cv.height - y - margin;
+                          }
+                        }
+                        break;
+                      }
+
+                      _ => {}
                     }
-
-                    _ => {}
                   }
+
+                  _ => {}
                 }
-
-                3 => {
-                  match t.ty {
-                    token::TokenType::Alpha
-                    | token::TokenType::Kana
-                    | token::TokenType::Zenkaku => {
-                      // 次の文字が見つかった。
-                      s = 4;
-                      self.black_source = l.source;
-                      self.black_token = t.seq;
-                      break;
-                    }
-
-                    _ => {}
-                  }
-                }
-
-                _ => {}
               }
+
+              if s == 4 {
+                break;
+              }
+
+              p += 1;
             }
 
             if s == 4 {
@@ -702,6 +773,20 @@ impl PanelSection {
 
             _ => {
               self.black_source = 1;
+            }
+          }
+
+          if self.is_vertical {
+            let x = lw * p as f64;
+
+            if self.pos + cv.width - x - margin < 0.0 {
+              self.pos = x + margin - cv.width;
+            }
+          } else {
+            let y = lw * p as f64;
+
+            if self.pos + y + margin > cv.height {
+              self.pos = cv.height - y - margin;
             }
           }
 

@@ -105,7 +105,7 @@ impl panel::Panel for PanelContents {
         let mut is_gray = false;
 
         for l in &self.plines {
-          match l.print_lines(
+          match l.draw_line(
             x,
             cv,
             areas,
@@ -140,7 +140,7 @@ impl panel::Panel for PanelContents {
         let mut is_gray = false;
 
         for l in &self.plines {
-          match l.print_lines(
+          match l.draw_line(
             y,
             cv,
             areas,

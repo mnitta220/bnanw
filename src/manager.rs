@@ -514,12 +514,14 @@ impl Manager {
     if self.is_contents == false {
       if let Some(ps) = &mut self.psec {
         if self.is_black {
-          if let Err(e) = ps.black_step(mt) {
-            return Err(e);
-          }
+          if let Some(cv) = &self.canvas {
+            if let Err(e) = ps.black_step(mt, &cv) {
+              return Err(e);
+            }
 
-          if let Err(e) = self.draw() {
-            return Err(e);
+            if let Err(e) = self.draw() {
+              return Err(e);
+            }
           }
         } else {
           match mt {

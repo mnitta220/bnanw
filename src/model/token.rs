@@ -5,6 +5,7 @@ pub enum TokenType {
   Zenkaku,
   Zenkigo,
   Kana,
+  Yousoku, // 拗促音
   Alpha,
   Kuten,
   Space,
@@ -22,6 +23,7 @@ impl fmt::Display for TokenType {
       TokenType::Zenkaku => write!(f, "Zenkaku"),
       TokenType::Zenkigo => write!(f, "Zenkigo"),
       TokenType::Kana => write!(f, "Kana"),
+      TokenType::Yousoku => write!(f, "Yousoku"),
       TokenType::Alpha => write!(f, "Alpha"),
       TokenType::Kuten => write!(f, "Kuten"),
       TokenType::Space => write!(f, "Space"),

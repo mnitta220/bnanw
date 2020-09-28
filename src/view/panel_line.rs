@@ -138,6 +138,7 @@ impl PanelLine {
               token::TokenType::Zenkaku
               | token::TokenType::Zenkigo
               | token::TokenType::Kana
+              | token::TokenType::Yousoku
               | token::TokenType::Alpha
               | token::TokenType::Kuten
               | token::TokenType::Special => {
@@ -198,6 +199,7 @@ impl PanelLine {
           token::TokenType::Zenkaku
           | token::TokenType::Zenkigo
           | token::TokenType::Kana
+          | token::TokenType::Yousoku
           | token::TokenType::Kuten
           | token::TokenType::Space
           | token::TokenType::Special => {
@@ -366,19 +368,21 @@ impl PanelLine {
               kinsoku = true;
             } else if t2.ty == token::TokenType::Zenkigo {
               match &t2.word.chars().next().unwrap() {
-                '」' | '』' | '）' | '】' | '］' | '｝' | '》' => {
+                '」' | '』' | '）' | '】' | '］' | '｝' | '》' | '＞' => {
                   kinsoku = true;
                 }
 
                 _ => {}
               }
+            } else if t2.ty == token::TokenType::Yousoku {
+              kinsoku = true;
             }
 
             if j > i {
               let t2 = &self.ptokens[j - 1];
               if t2.ty == token::TokenType::Zenkigo {
                 match &t2.word.chars().next().unwrap() {
-                  '「' | '『' | '（' | '【' | '［' | '｛' | '《' => {
+                  '「' | '『' | '（' | '【' | '［' | '｛' | '《' | '＜' => {
                     kinsoku = true;
                   }
                   _ => {}
@@ -409,6 +413,7 @@ impl PanelLine {
           | token::TokenType::Zenkigo
           | token::TokenType::Alpha
           | token::TokenType::Kana
+          | token::TokenType::Yousoku
           | token::TokenType::Kuten
           | token::TokenType::Space
           | token::TokenType::Special => {
@@ -443,7 +448,7 @@ impl PanelLine {
     }
   }
 
-  pub fn print_lines(
+  pub fn draw_line(
     &self,
     pos: f64,
     cv: &canvas::Canvas,
@@ -458,7 +463,7 @@ impl PanelLine {
   ) -> Result<f64, &'static str> {
     /*
     log!(
-      "***print_lines: source={} align={} pos={} black_line={} black_token={} is_contents={} is_gray={} is_current={}",
+      "***draw_line: source={} align={} pos={} black_line={} black_token={} is_contents={} is_gray={} is_current={}",
       self.source,
       self.align,
       pos,
@@ -471,7 +476,7 @@ impl PanelLine {
     */
 
     if self.is_vertical {
-      self.print_vertical(
+      self.draw_vertical(
         pos,
         cv,
         areas,
@@ -484,7 +489,7 @@ impl PanelLine {
         is_dark,
       )
     } else {
-      self.print_horizontal(
+      self.draw_horizontal(
         pos,
         cv,
         areas,
@@ -499,7 +504,7 @@ impl PanelLine {
     }
   }
 
-  fn print_vertical(
+  fn draw_vertical(
     &self,
     pos: f64,
     cv: &canvas::Canvas,
@@ -658,7 +663,10 @@ impl PanelLine {
             }
 
             match t.ty {
-              token::TokenType::Zenkaku | token::TokenType::Kana | token::TokenType::Special => {
+              token::TokenType::Zenkaku
+              | token::TokenType::Kana
+              | token::TokenType::Yousoku
+              | token::TokenType::Special => {
                 let rw = t.ruby_width();
                 let rl = t.ruby_len();
                 let xr = x + cv.met;
@@ -682,7 +690,17 @@ impl PanelLine {
                             }
 
                             _ => {
-                              cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                              if r.ty == token::TokenType::Yousoku {
+                                cv.context
+                                  .fill_text(
+                                    &c.to_string(),
+                                    xr + (cv.metr * 0.1),
+                                    yr - (cv.metr * 0.1),
+                                  )
+                                  .unwrap();
+                              } else {
+                                cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                              }
                             }
                           }
                         }
@@ -702,13 +720,23 @@ impl PanelLine {
 
                     for c in t.word.chars() {
                       if black == false {
-                        if t.ty == token::TokenType::Special {
-                          let st = &c.to_string();
-                          let w3 = cv.context.measure_text(st).unwrap().width();
-                          let w3 = (cv.met - w3) * 0.5;
-                          cv.context.fill_text(st, x + w3, y3).unwrap();
-                        } else {
-                          cv.context.fill_text(&c.to_string(), x, y3).unwrap();
+                        match t.ty {
+                          token::TokenType::Special => {
+                            let st = &c.to_string();
+                            let w3 = cv.context.measure_text(st).unwrap().width();
+                            let w3 = (cv.met - w3) * 0.5;
+                            cv.context.fill_text(st, x + w3, y3).unwrap();
+                          }
+
+                          token::TokenType::Yousoku => {
+                            cv.context
+                              .fill_text(&c.to_string(), x + (cv.met * 0.1), y3 - (cv.met * 0.1))
+                              .unwrap();
+                          }
+
+                          _ => {
+                            cv.context.fill_text(&c.to_string(), x, y3).unwrap();
+                          }
                         }
                       }
 
@@ -751,7 +779,17 @@ impl PanelLine {
                             }
 
                             _ => {
-                              cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                              if r.ty == token::TokenType::Yousoku {
+                                cv.context
+                                  .fill_text(
+                                    &c.to_string(),
+                                    xr + (cv.metr * 0.1),
+                                    yr - (cv.metr * 0.1),
+                                  )
+                                  .unwrap();
+                              } else {
+                                cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                              }
                             }
                           }
                         }
@@ -767,13 +805,23 @@ impl PanelLine {
                     y += cv.met;
 
                     if black == false {
-                      if t.ty == token::TokenType::Special {
-                        let st = &c.to_string();
-                        let w3 = cv.context.measure_text(st).unwrap().width();
-                        let w3 = (cv.met - w3) * 0.5;
-                        cv.context.fill_text(st, x + w3, y).unwrap();
-                      } else {
-                        cv.context.fill_text(&c.to_string(), x, y).unwrap();
+                      match t.ty {
+                        token::TokenType::Special => {
+                          let st = &c.to_string();
+                          let w3 = cv.context.measure_text(st).unwrap().width();
+                          let w3 = (cv.met - w3) * 0.5;
+                          cv.context.fill_text(st, x + w3, y).unwrap();
+                        }
+
+                        token::TokenType::Yousoku => {
+                          cv.context
+                            .fill_text(&c.to_string(), x + (cv.met * 0.1), y - (cv.met * 0.1))
+                            .unwrap();
+                        }
+
+                        _ => {
+                          cv.context.fill_text(&c.to_string(), x, y).unwrap();
+                        }
                       }
                     }
                   }
@@ -862,7 +910,7 @@ impl PanelLine {
     Ok(x)
   }
 
-  fn print_horizontal(
+  fn draw_horizontal(
     &self,
     pos: f64,
     cv: &canvas::Canvas,
@@ -1022,7 +1070,10 @@ impl PanelLine {
             }
 
             match t.ty {
-              token::TokenType::Zenkaku | token::TokenType::Kana | token::TokenType::Special => {
+              token::TokenType::Zenkaku
+              | token::TokenType::Kana
+              | token::TokenType::Yousoku
+              | token::TokenType::Special => {
                 let rw = t.ruby_width();
                 let rl = t.ruby_len();
                 let yr = y - cv.met;
