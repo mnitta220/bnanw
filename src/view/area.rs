@@ -1,5 +1,3 @@
-use wasm_bindgen::prelude::*;
-
 pub struct Area {
   pub source: isize,
   pub token: isize,
@@ -38,11 +36,6 @@ impl Area {
     }
 
     (-3, -3)
-  }
-
-  pub fn draw(&self, context: &web_sys::CanvasRenderingContext2d) {
-    context.set_fill_style(&JsValue::from_str("#555555"));
-    context.fill_rect(self.x1, self.y1, self.x2 - self.x1, self.y2 - self.y1);
   }
 
   pub fn to_string(&self) -> String {

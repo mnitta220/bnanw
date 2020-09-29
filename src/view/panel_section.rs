@@ -463,14 +463,12 @@ impl PanelSection {
       self.black_token
     );
     */
-    let lw = cv.met + cv.ruby_w + cv.line_margin;
-    let margin = lw * 2.1;
+    let margin = cv.met + cv.ruby_w + cv.line_margin;
 
     match mt {
       // 1区切り進む
       MoveType::FdSlash => {
         let mut s: i32 = 0;
-        let mut p: usize = 0;
 
         for pl in &self.plines {
           if s == 0 && pl.source == self.black_source {
@@ -478,9 +476,7 @@ impl PanelSection {
             s = 1;
           }
 
-          if pl.lines.len() == 0 {
-            p += 1;
-          } else {
+          if s > 0 {
             for vl in &pl.lines {
               for pt in &vl.ptokens {
                 match s {
@@ -500,6 +496,7 @@ impl PanelSection {
                         // 次の文字が見つかった。
                         s = 3;
                       }
+
                       _ => {}
                     }
                   }
@@ -510,23 +507,25 @@ impl PanelSection {
                       self.black_source = pl.source;
                       self.black_token = pt.seq;
                       s = 4;
+                      let ai = self.area_index();
 
-                      if self.is_vertical {
-                        let x = lw * p as f64;
+                      if ai > -1 {
+                        let a = &self.areas[ai as usize];
 
-                        if self.pos + cv.width - x - margin < 0.0 {
-                          self.pos = x + margin - cv.width;
-                        }
-                      } else {
-                        let y = lw * p as f64;
-
-                        if self.pos + y + margin > cv.height {
-                          self.pos = cv.height - y - margin;
+                        if self.is_vertical {
+                          if a.x1 < margin {
+                            self.pos += margin - a.x1;
+                          }
+                        } else {
+                          if a.y2 + margin > cv.height {
+                            self.pos += cv.height - margin - a.y2;
+                          }
                         }
                       }
                       break;
                     }
                   }
+
                   _ => {}
                 }
 
@@ -534,8 +533,6 @@ impl PanelSection {
                   break;
                 }
               }
-
-              p += 1;
             }
           }
 
@@ -555,21 +552,22 @@ impl PanelSection {
             }
           }
 
-          if self.is_vertical {
-            let x = lw * p as f64;
+          self.black_token = 0;
+          let ai = self.area_index();
 
-            if self.pos + cv.width - x - margin < 0.0 {
-              self.pos = x + margin - cv.width;
-            }
-          } else {
-            let y = lw * p as f64;
+          if ai > -1 {
+            let a = &self.areas[ai as usize];
 
-            if self.pos + y + margin > cv.height {
-              self.pos = cv.height - y - margin;
+            if self.is_vertical {
+              if a.x1 < margin {
+                self.pos += margin - a.x1;
+              }
+            } else {
+              if a.y2 + margin > cv.height {
+                self.pos += cv.height - margin - a.y2;
+              }
             }
           }
-
-          self.black_token = 0;
         }
       }
 
@@ -671,7 +669,6 @@ impl PanelSection {
       // 1単語進む
       MoveType::FdOne => {
         let mut s: i32 = 0;
-        let mut p: usize = 0;
 
         for pl in &self.plines {
           if s == 0 && pl.source == self.black_source {
@@ -679,9 +676,7 @@ impl PanelSection {
             s = 1;
           }
 
-          if pl.lines.len() == 0 {
-            p += 1;
-          } else {
+          if s > 0 {
             for vl in &pl.lines {
               for pt in &vl.ptokens {
                 match s {
@@ -698,6 +693,7 @@ impl PanelSection {
                           // 現在の文字が見つかった。
                           s = 3;
                         }
+
                         _ => {}
                       }
                     }
@@ -727,18 +723,19 @@ impl PanelSection {
                         s = 4;
                         self.black_source = pl.source;
                         self.black_token = pt.seq;
+                        let ai = self.area_index();
 
-                        if self.is_vertical {
-                          let x = lw * p as f64;
+                        if ai > -1 {
+                          let a = &self.areas[ai as usize];
 
-                          if self.pos + cv.width - x - margin < 0.0 {
-                            self.pos = x + margin - cv.width;
-                          }
-                        } else {
-                          let y = lw * p as f64;
-
-                          if self.pos + y + margin > cv.height {
-                            self.pos = cv.height - y - margin;
+                          if self.is_vertical {
+                            if a.x1 < margin {
+                              self.pos += margin - a.x1;
+                            }
+                          } else {
+                            if a.y2 + margin > cv.height {
+                              self.pos += cv.height - margin - a.y2;
+                            }
                           }
                         }
                         break;
@@ -755,8 +752,6 @@ impl PanelSection {
               if s == 4 {
                 break;
               }
-
-              p += 1;
             }
 
             if s == 4 {
@@ -776,21 +771,22 @@ impl PanelSection {
             }
           }
 
-          if self.is_vertical {
-            let x = lw * p as f64;
+          self.black_token = 0;
+          let ai = self.area_index();
 
-            if self.pos + cv.width - x - margin < 0.0 {
-              self.pos = x + margin - cv.width;
-            }
-          } else {
-            let y = lw * p as f64;
+          if ai > -1 {
+            let a = &self.areas[ai as usize];
 
-            if self.pos + y + margin > cv.height {
-              self.pos = cv.height - y - margin;
+            if self.is_vertical {
+              if a.x1 < margin {
+                self.pos += margin - a.x1;
+              }
+            } else {
+              if a.y2 + margin > cv.height {
+                self.pos += cv.height - margin - a.y2;
+              }
             }
           }
-
-          self.black_token = 0;
         }
       }
 
@@ -851,5 +847,25 @@ impl PanelSection {
     }
 
     Ok(0)
+  }
+
+  fn area_index(&self) -> isize {
+    let mut i: isize = 0;
+    let mut j: isize = -1;
+
+    for a in &self.areas {
+      if a.source > self.black_source {
+        break;
+      }
+
+      if a.source == self.black_source && a.token > self.black_token {
+        break;
+      }
+
+      j = i;
+      i += 1;
+    }
+
+    j
   }
 }
