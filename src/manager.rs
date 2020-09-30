@@ -102,8 +102,15 @@ impl Manager {
     width: i32,
     height: i32,
     is_dark: bool,
+    is_android: bool,
   ) -> Result<isize, &'static str> {
     //log!("***Manager.draw_doc");
+    if is_android {
+      if self.font_loaded == false {
+        return Err("ERR_GET_FONT");
+      }
+    }
+
     let canvas: web_sys::HtmlCanvasElement;
     let context: web_sys::CanvasRenderingContext2d;
     self.is_dark = is_dark;
@@ -115,8 +122,8 @@ impl Manager {
             context = cn;
           }
 
-          Err(e) => {
-            return Err(e);
+          Err(_) => {
+            return Err("ERR_GET_CONTEXT");
           }
         }
 
@@ -126,8 +133,8 @@ impl Manager {
         canvas.set_height(height as u32);
       }
 
-      Err(e) => {
-        return Err(e);
+      Err(_) => {
+        return Err("ERR_GET_CANVAS");
       }
     }
 
@@ -271,6 +278,8 @@ impl Manager {
 
           pc.areas.clear();
           pc.areas = areas;
+        } else {
+          return Err("ERR_GET_CANVAS");
         }
       }
     } else {
@@ -284,6 +293,8 @@ impl Manager {
 
           ps.areas.clear();
           ps.areas = areas;
+        } else {
+          return Err("ERR_GET_CANVAS");
         }
       }
     }
@@ -500,6 +511,8 @@ impl Manager {
         self.section = section;
         let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * ps.count_lines() as f64;
         ps.set_panel_width(panel_width);
+      } else {
+        return Err("ERR_GET_CANVAS");
       }
 
       ps.pos = 0.0;
@@ -522,6 +535,8 @@ impl Manager {
             if let Err(e) = self.draw() {
               return Err(e);
             }
+          } else {
+            return Err("ERR_GET_CANVAS");
           }
         } else {
           match mt {

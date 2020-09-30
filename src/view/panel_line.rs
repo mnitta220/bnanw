@@ -364,18 +364,20 @@ impl PanelLine {
             let t2 = &self.ptokens[j];
             kinsoku = false;
 
-            if t2.ty == token::TokenType::Kuten {
-              kinsoku = true;
-            } else if t2.ty == token::TokenType::Zenkigo {
-              match &t2.word.chars().next().unwrap() {
+            match t2.ty {
+              token::TokenType::Kuten | token::TokenType::Yousoku => {
+                kinsoku = true;
+              }
+
+              token::TokenType::Zenkigo => match &t2.word.chars().next().unwrap() {
                 '」' | '』' | '）' | '】' | '］' | '｝' | '》' | '＞' => {
                   kinsoku = true;
                 }
 
                 _ => {}
-              }
-            } else if t2.ty == token::TokenType::Yousoku {
-              kinsoku = true;
+              },
+
+              _ => {}
             }
 
             if j > i {
@@ -587,7 +589,7 @@ impl PanelLine {
       for l in &self.lines {
         area_x1 = x;
 
-        if (-cv.met - cv.met) < x && x < (cv.canvas.width() as f64) {
+        if (-cv.met * 4.0) < x && x < (cv.canvas.width() as f64) {
           let mut y = cv.y1 + self.indent;
           let mut spc: f64 = 1.0;
           let mut y1 = cv.y1;
@@ -990,7 +992,7 @@ impl PanelLine {
       for l in &self.lines {
         area_y2 = y;
 
-        if 0.0 < y && y < (cv.canvas.height() as f64 + cv.met + cv.met) {
+        if 0.0 < y && y < (cv.canvas.height() as f64 + (cv.met * 4.0)) {
           let mut x = cv.x1 + self.indent;
           let mut spc: f64 = 1.0;
           let mut x1 = cv.x1;

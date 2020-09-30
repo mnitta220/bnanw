@@ -234,23 +234,31 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
 /// - キャンバスの高さ
 /// ## is_dark
 /// - true: ダークモード
+/// ## is_android
+/// - true: Android
 ///
 /// # 戻り値
 /// なし
 ///
 #[wasm_bindgen]
-pub fn draw_doc(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
+pub fn draw_doc(width: i32, height: i32, is_dark: bool, is_android: bool) -> Result<(), JsValue> {
   //log!("***draw_doc: width={} height={}", width, height);
 
-  if let Err(e1) = MANAGER.with(
-    |mg| match mg.borrow_mut().draw_doc(width, height, is_dark) {
-      Err(e) => {
-        return Err(JsValue::from_str(&format!("draw_doc failed!: {}", e)));
-      }
+  if let Err(e1) =
+    MANAGER.with(
+      |mg| match mg.borrow_mut().draw_doc(width, height, is_dark, is_android) {
+        Err(e) => {
+          if e == "FONT_NOT_LOAD_YET" {
+            return Err(JsValue::from_str(e));
+          }
 
-      _ => Ok(()),
-    },
-  ) {
+          return Err(JsValue::from_str(&format!("draw_doc failed!: {}", e)));
+        }
+
+        _ => Ok(()),
+      },
+    )
+  {
     return Err(JsValue::from_str(&format!("draw_doc failed!: {:?}", e1)));
   }
 
