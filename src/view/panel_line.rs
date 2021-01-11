@@ -140,6 +140,7 @@ impl PanelLine {
               | token::TokenType::Kana
               | token::TokenType::Yousoku
               | token::TokenType::Alpha
+              | token::TokenType::Hankigo
               | token::TokenType::Kuten
               | token::TokenType::Special => {
                 cv.context.set_font(&cv.ruby_font);
@@ -227,7 +228,7 @@ impl PanelLine {
             }
           }
 
-          token::TokenType::Alpha => {
+          token::TokenType::Alpha | token::TokenType::Hankigo => {
             t = panel_token::PanelToken {
               seq: seq,
               ty: source.tokens[i].ty,
@@ -414,6 +415,7 @@ impl PanelLine {
           token::TokenType::Zenkaku
           | token::TokenType::Zenkigo
           | token::TokenType::Alpha
+          | token::TokenType::Hankigo
           | token::TokenType::Kana
           | token::TokenType::Yousoku
           | token::TokenType::Kuten
@@ -453,6 +455,7 @@ impl PanelLine {
   pub fn draw_line(
     &self,
     pos: f64,
+    font_size: isize,
     cv: &canvas::Canvas,
     areas: &mut Vec<area::Area>,
     black_line: isize,
@@ -480,6 +483,7 @@ impl PanelLine {
     if self.is_vertical {
       self.draw_vertical(
         pos,
+        font_size,
         cv,
         areas,
         black_line,
@@ -509,6 +513,7 @@ impl PanelLine {
   fn draw_vertical(
     &self,
     pos: f64,
+    font_size: isize,
     cv: &canvas::Canvas,
     areas: &mut Vec<area::Area>,
     black_line: isize,
@@ -845,7 +850,20 @@ impl PanelLine {
               token::TokenType::Alpha => {
                 if black == false {
                   cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                  cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                  cv.context.fill_text(&t.word, y + 3.0, -x - 4.0).unwrap();
+                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                }
+
+                y += t.width + spc;
+              }
+
+              token::TokenType::Hankigo => {
+                if black == false {
+                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                  //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                  cv.context
+                    .fill_text(&t.word, y + 3.0, -x - (font_size as f64 * 0.3) - 1.0)
+                    .unwrap();
                   cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
                 }
 
@@ -1166,7 +1184,7 @@ impl PanelLine {
                 x += t.width + spc;
               }
 
-              token::TokenType::Alpha => {
+              token::TokenType::Alpha | token::TokenType::Hankigo => {
                 if black == false {
                   cv.context.fill_text(&t.word, x, y).unwrap();
                 }

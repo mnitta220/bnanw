@@ -8,6 +8,7 @@ use wasm_bindgen::prelude::*;
 
 pub struct PanelContents {
   pub is_vertical: bool,
+  pub font_size: isize,
   pub pos: f64,
   pub touching: bool,
   pub start_x: i32,
@@ -30,6 +31,7 @@ impl panel::Panel for PanelContents {
 
     let mut pc = PanelContents {
       is_vertical: mgr.is_vertical,
+      font_size: mgr.font_size,
       pos: 0.0,
       touching: false,
       start_x: 0,
@@ -107,6 +109,7 @@ impl panel::Panel for PanelContents {
         for l in &self.plines {
           match l.draw_line(
             x,
+            self.font_size,
             cv,
             areas,
             0,
@@ -142,6 +145,7 @@ impl panel::Panel for PanelContents {
         for l in &self.plines {
           match l.draw_line(
             y,
+            self.font_size,
             cv,
             areas,
             0,

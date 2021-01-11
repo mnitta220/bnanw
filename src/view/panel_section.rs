@@ -10,6 +10,7 @@ use wasm_bindgen::prelude::*;
 
 pub struct PanelSection {
   pub is_vertical: bool,
+  pub font_size: isize,
   pub pos: f64,
   pub touching: bool,
   pub start_x: i32,
@@ -34,6 +35,7 @@ impl panel::Panel for PanelSection {
 
     let mut ps = PanelSection {
       is_vertical: mgr.is_vertical,
+      font_size: mgr.font_size,
       pos: 0.0,
       touching: false,
       start_x: 0,
@@ -103,6 +105,7 @@ impl panel::Panel for PanelSection {
         for l in &self.plines {
           match l.draw_line(
             x,
+            self.font_size,
             cv,
             areas,
             self.black_source,
@@ -134,6 +137,7 @@ impl panel::Panel for PanelSection {
         for l in &self.plines {
           match l.draw_line(
             y,
+            self.font_size,
             cv,
             areas,
             self.black_source,
@@ -490,6 +494,7 @@ impl PanelSection {
                   2 => {
                     match pt.ty {
                       token::TokenType::Alpha
+                      | token::TokenType::Hankigo
                       | token::TokenType::Kana
                       | token::TokenType::Yousoku
                       | token::TokenType::Zenkaku => {
@@ -621,6 +626,7 @@ impl PanelSection {
                 2 => {
                   match self.plines[j].ptokens[i].ty {
                     token::TokenType::Alpha
+                    | token::TokenType::Hankigo
                     | token::TokenType::Kana
                     | token::TokenType::Yousoku
                     | token::TokenType::Zenkaku => {
@@ -687,6 +693,7 @@ impl PanelSection {
 
                       match pt.ty {
                         token::TokenType::Alpha
+                        | token::TokenType::Hankigo
                         | token::TokenType::Kana
                         | token::TokenType::Yousoku
                         | token::TokenType::Zenkaku => {
@@ -702,6 +709,7 @@ impl PanelSection {
                   2 => {
                     match pt.ty {
                       token::TokenType::Alpha
+                      | token::TokenType::Hankigo
                       | token::TokenType::Kana
                       | token::TokenType::Yousoku
                       | token::TokenType::Zenkaku => {
@@ -716,6 +724,7 @@ impl PanelSection {
                   3 => {
                     match pt.ty {
                       token::TokenType::Alpha
+                      | token::TokenType::Hankigo
                       | token::TokenType::Kana
                       | token::TokenType::Yousoku
                       | token::TokenType::Zenkaku => {

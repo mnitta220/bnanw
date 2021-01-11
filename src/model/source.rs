@@ -246,8 +246,21 @@ impl Source {
           buf.push(c);
         }
 
+        // 半角記号
+        '(' | ')' | '[' | ']' | '{' | '}' => {
+          if buf_type != token::TokenType::Hankigo && buf_type != token::TokenType::None {
+            token = token::Token::new(buf_type, buf.as_ref());
+            self.tokens.push(token);
+            buf = String::new();
+          }
+
+          buf_type = token::TokenType::Hankigo;
+          buf.push(c);
+        }
+
         _ => {
-          if c <= 'ߺ' {
+          //if c <= 'ߺ' {
+          if c <= 'ʸ' {
             // 半角文字
             if buf_type != token::TokenType::Alpha && buf_type != token::TokenType::None {
               token = token::Token::new(buf_type, buf.as_ref());
