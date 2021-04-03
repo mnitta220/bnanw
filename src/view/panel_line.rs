@@ -146,7 +146,7 @@ impl PanelLine {
                 cv.context.set_font(&cv.ruby_font);
 
                 t = panel_token::PanelToken {
-                  seq: seq,
+                  seq: (seq + 1),
                   ty: source.tokens[j].ty,
                   word: source.tokens[j].word.to_owned(),
                   ruby: None,
@@ -180,7 +180,7 @@ impl PanelLine {
       if ruby_e > (ruby_s + 1) {
         // ルビあり
         t = panel_token::PanelToken {
-          seq: seq,
+          seq: (seq - ruby_tokens.len() as isize),
           ty: source.tokens[i].ty,
           word: source.tokens[i].word.to_owned(),
           ruby: Some(ruby_tokens),

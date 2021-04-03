@@ -24,6 +24,12 @@ pub enum MoveType {
   BkTop,
 }
 
+pub enum TabType {
+  TabText,
+  TabContents,
+  TabBoard,
+}
+
 // 画面の情報をスレッドローカルのスタティックに保持する
 thread_local!(
   pub static MANAGER: RefCell<manager::Manager> = RefCell::new(manager::Manager::new())
@@ -295,10 +301,10 @@ pub fn resize(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
   Ok(())
 }
 
-/// 本文/目次を切り替える
+/// タブを切り替える
 ///
 /// # 引数
-/// ## is_contents
+/// ## tab
 /// - false: 本文
 /// - true: 目次
 ///
@@ -306,23 +312,23 @@ pub fn resize(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
 /// なし
 ///
 #[wasm_bindgen]
-pub fn contents_change(is_contents: bool) -> Result<(), JsValue> {
-  //log!("***contents_change is_contents={}", is_contents);
+pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
+  //log!("***tab_change tab={}", tab);
+  let t: TabType;
+  match tab {
+    1 => t = TabType::TabContents,
+    2 => t = TabType::TabBoard,
+    _ => t = TabType::TabText,
+  }
 
-  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().contents_change(is_contents) {
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().tab_change(t, width, height, is_dark) {
     Err(e) => {
-      return Err(JsValue::from_str(&format!(
-        "contents_change failed!: {}",
-        e
-      )));
+      return Err(JsValue::from_str(&format!("tab_change failed!: {}", e)));
     }
 
     _ => Ok(()),
   }) {
-    return Err(JsValue::from_str(&format!(
-      "contents_change failed!: {:?}",
-      e1
-    )));
+    return Err(JsValue::from_str(&format!("tab_change failed!: {:?}", e1)));
   }
 
   Ok(())
@@ -492,6 +498,54 @@ pub fn black_step(step: i32) -> Result<(), JsValue> {
     _ => Ok(()),
   }) {
     return Err(JsValue::from_str(&format!("black_step failed!: {:?}", e1)));
+  }
+
+  Ok(())
+}
+
+/// 白板・戻る
+///
+/// # 引数
+///
+/// # 戻り値
+/// なし
+///
+#[wasm_bindgen]
+pub fn stroke_back() -> Result<(), JsValue> {
+  //log!("***stroke_back");
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().stroke_back() {
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("stroke_back failed!: {}", e)));
+    }
+
+    _ => Ok(()),
+  }) {
+    return Err(JsValue::from_str(&format!("stroke_back failed!: {:?}", e1)));
+  }
+
+  Ok(())
+}
+
+/// 白板・消去
+///
+/// # 引数
+///
+/// # 戻り値
+/// なし
+///
+#[wasm_bindgen]
+pub fn stroke_clear() -> Result<(), JsValue> {
+  //log!("***stroke_clear");
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().stroke_clear() {
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("stroke_clear failed!: {}", e)));
+    }
+
+    _ => Ok(()),
+  }) {
+    return Err(JsValue::from_str(&format!("stroke_clear failed!: {:?}", e1)));
   }
 
   Ok(())
