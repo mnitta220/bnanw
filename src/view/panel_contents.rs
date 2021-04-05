@@ -422,3 +422,18 @@ impl panel::Panel for PanelContents {
     }
   }
 }
+
+impl PanelContents {
+  pub fn set_current(&mut self, cur: isize, cv: &canvas::Canvas) {
+    self.current = cur;
+    //let mut p: f64 = 0.0;
+    let mut count: usize = 0;
+    for l in &self.plines {
+      if l.source == self.current {
+        break;
+      }
+      count = count + l.lines.len();
+    }
+    self.pos = (cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+  }
+}

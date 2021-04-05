@@ -254,7 +254,13 @@ impl Manager {
   }
 
   /// タブを切り替える
-  pub fn tab_change(&mut self, tab: TabType, width: i32, height: i32, is_dark: bool) -> Result<isize, &'static str> {
+  pub fn tab_change(
+    &mut self,
+    tab: TabType,
+    width: i32,
+    height: i32,
+    is_dark: bool,
+  ) -> Result<isize, &'static str> {
     //log!("***Manager.tab_change tab={}", tab);
     self.tab = tab;
     let canvas: web_sys::HtmlCanvasElement;
@@ -555,7 +561,10 @@ impl Manager {
     //log!("***Manager.change_section: section={}", section);
 
     if let Some(pc) = &mut self.pcon {
-      pc.current = section;
+      //pc.current = section;
+      if let Some(cv) = &self.canvas {
+        pc.set_current(section, &cv)
+      }
     }
 
     if let Some(ps) = &mut self.psec {
