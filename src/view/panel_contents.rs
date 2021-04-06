@@ -434,6 +434,11 @@ impl PanelContents {
       }
       count = count + l.lines.len();
     }
-    self.pos = (cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+
+    if self.is_vertical {
+      self.pos = (cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+    } else {
+      self.pos = -(cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+    }
   }
 }
