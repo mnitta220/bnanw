@@ -627,55 +627,137 @@ impl Manager {
 
   /// 黒塗りを移動する
   pub fn black_step(&mut self, mt: MoveType) -> Result<isize, &'static str> {
-    //log!("***black_step {}", step);
+    //log!("***manager::black_step");
     match self.tab {
       TabType::TabText => {
-        if let Some(ps) = &mut self.psec {
-          if self.is_black {
-            if let Some(cv) = &self.canvas {
-              if let Err(e) = ps.black_step(mt, &cv) {
+        match mt {
+          MoveType::FdSec => {
+            let mut sec = self.section;
+            let mut i = 0;
+            let mut found1 = false;
+            let mut found2 = false;
+            if sec == DOC_TOP {
+              sec = 0;
+            }
+            loop {
+              if i >= self.sources.len() {
+                break;
+              }
+              if found2 {
+                if self.sources[i].ty != 0 {
+                  //log!("***next section={}", i);
+                  if let Err(e) = self.change_section(i as isize) {
+                    return Err(e);
+                  }
+                  if let Err(e) = self.draw() {
+                    return Err(e);
+                  }
+                  break;
+                }
+              }
+              if found1 {
+                if self.sources[i].ty == 0 {
+                  found2 = true;
+                }
+              }
+              if self.sources[i].seq == sec {
+                found1 = true;
+              }
+              i += 1;
+            }
+          }
+
+          MoveType::BkSec => {
+            let mut i: isize = self.sources.len() as isize - 1;
+            let mut found1 = false;
+            let mut found2 = false;
+            let mut found3 = false;
+            loop {
+              if i < 0 {
+                break;
+              }
+              if found2 {
+                if self.sources[i as usize].ty != 0 {
+                  //log!("***next section={}", i);
+                  if let Err(e) = self.change_section(i as isize) {
+                    return Err(e);
+                  }
+                  if let Err(e) = self.draw() {
+                    return Err(e);
+                  }
+                  found3 = true;
+                  break;
+                }
+              }
+              if found1 {
+                if self.sources[i as usize].ty == 0 {
+                  found2 = true;
+                }
+              }
+              if self.sources[i as usize].seq == self.section {
+                found1 = true;
+              }
+              i -= 1;
+            }
+            if found3 == false {
+              if let Err(e) = self.change_section(DOC_TOP) {
                 return Err(e);
               }
-
               if let Err(e) = self.draw() {
                 return Err(e);
               }
-            } else {
-              return Err("ERR_GET_CANVAS");
             }
-          } else {
-            match mt {
-              // 末尾に進む
-              MoveType::FdBottom => {
-                if self.is_vertical {
-                  ps.pos = ps.panel_width - (ps.width * 0.6);
+          }
 
-                  if ps.pos < 0.0 {
-                    ps.pos = 0.0;
+          _ => {
+            if let Some(ps) = &mut self.psec {
+              if self.is_black {
+                if let Some(cv) = &self.canvas {
+                  if let Err(e) = ps.black_step(mt, &cv) {
+                    return Err(e);
+                  }
+
+                  if let Err(e) = self.draw() {
+                    return Err(e);
                   }
                 } else {
-                  ps.pos = (ps.height * 0.6) - ps.panel_width;
+                  return Err("ERR_GET_CANVAS");
+                }
+              } else {
+                match mt {
+                  // 末尾に進む
+                  MoveType::FdBottom => {
+                    if self.is_vertical {
+                      ps.pos = ps.panel_width - (ps.width * 0.6);
 
-                  if ps.pos > 0.0 {
-                    ps.pos = 0.0;
+                      if ps.pos < 0.0 {
+                        ps.pos = 0.0;
+                      }
+                    } else {
+                      ps.pos = (ps.height * 0.6) - ps.panel_width;
+
+                      if ps.pos > 0.0 {
+                        ps.pos = 0.0;
+                      }
+                    }
+
+                    if let Err(e) = self.draw() {
+                      return Err(e);
+                    }
                   }
-                }
 
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              }
+                  // 先頭に戻る
+                  MoveType::BkTop => {
+                    ps.pos = 0.0;
 
-              // 先頭に戻る
-              MoveType::BkTop => {
-                ps.pos = 0.0;
+                    if let Err(e) = self.draw() {
+                      return Err(e);
+                    }
+                  }
 
-                if let Err(e) = self.draw() {
-                  return Err(e);
+                  _ => {}
                 }
               }
-
-              _ => {}
             }
           }
         }

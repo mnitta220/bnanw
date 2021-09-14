@@ -840,6 +840,8 @@ impl PanelSection {
           }
         }
       }
+
+      _ => {}
     }
 
     Ok(0)

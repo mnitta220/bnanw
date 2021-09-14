@@ -22,6 +22,10 @@ pub enum MoveType {
   FdBottom,
   // 先頭に戻る
   BkTop,
+  // 次の段・節に進む
+  FdSec,
+  // 前の段・節に戻る
+  BkSec,
 }
 
 pub enum TabType {
@@ -321,13 +325,15 @@ pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<()
     _ => t = TabType::TabText,
   }
 
-  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().tab_change(t, width, height, is_dark) {
-    Err(e) => {
-      return Err(JsValue::from_str(&format!("tab_change failed!: {}", e)));
-    }
+  if let Err(e1) = MANAGER.with(
+    |mg| match mg.borrow_mut().tab_change(t, width, height, is_dark) {
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("tab_change failed!: {}", e)));
+      }
 
-    _ => Ok(()),
-  }) {
+      _ => Ok(()),
+    },
+  ) {
     return Err(JsValue::from_str(&format!("tab_change failed!: {:?}", e1)));
   }
 
@@ -467,6 +473,8 @@ pub fn mode_change(black: bool) -> Result<(), JsValue> {
 /// - 3 : 1単語進む
 /// - 4 : 末尾に進む
 /// - 5 : 先頭に戻る
+/// - 6 : 次の段・節に進む
+/// - 7 : 前の段・節に戻る
 ///
 /// # 戻り値
 /// なし
@@ -482,6 +490,8 @@ pub fn black_step(step: i32) -> Result<(), JsValue> {
     3 => mt = MoveType::FdOne,
     4 => mt = MoveType::FdBottom,
     5 => mt = MoveType::BkTop,
+    6 => mt = MoveType::FdSec,
+    7 => mt = MoveType::BkSec,
     _ => {
       return Err(JsValue::from_str(&format!(
         "black_step invalid step:{}",
@@ -545,7 +555,10 @@ pub fn stroke_clear() -> Result<(), JsValue> {
 
     _ => Ok(()),
   }) {
-    return Err(JsValue::from_str(&format!("stroke_clear failed!: {:?}", e1)));
+    return Err(JsValue::from_str(&format!(
+      "stroke_clear failed!: {:?}",
+      e1
+    )));
   }
 
   Ok(())
