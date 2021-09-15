@@ -1,7 +1,7 @@
 use super::model::source;
 use super::util;
 use super::view;
-use super::MoveType;
+use super::FuncType;
 use super::TabType;
 use crate::view::panel::Panel;
 
@@ -527,7 +527,7 @@ impl Manager {
           match ps.click() {
             Ok(r) => {
               if r == 1 {
-                if let Err(e) = self.black_step(MoveType::FdSlash) {
+                if let Err(e) = self.tool_func(FuncType::FdSlash) {
                   return Err(e);
                 }
               }
@@ -625,82 +625,106 @@ impl Manager {
     Ok(0)
   }
 
-  /// 黒塗りを移動する
-  pub fn black_step(&mut self, mt: MoveType) -> Result<isize, &'static str> {
-    //log!("***manager::black_step");
+  /// ツールボタンの操作
+  pub fn tool_func(&mut self, mt: FuncType) -> Result<isize, &'static str> {
+    //log!("***manager::tool_func");
     match self.tab {
       TabType::TabText => {
         match mt {
-          MoveType::FdSec => {
-            let mut sec = self.section;
-            let mut i = 0;
-            let mut found1 = false;
-            let mut found2 = false;
-            if sec == DOC_TOP {
-              sec = 0;
-            }
-            loop {
-              if i >= self.sources.len() {
-                break;
+          // 次の段・節に進む
+          FuncType::FdSec => {
+            if self.section == DOC_TOP {
+              if self.contents.len() > 0 {
+                //log!("***next section={}", self.sources[self.contents[0]].seq);
+                if let Err(e) = self.change_section(self.sources[self.contents[0]].seq as isize) {
+                  return Err(e);
+                }
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
               }
-              if found2 {
-                if self.sources[i].ty != 0 {
-                  //log!("***next section={}", i);
-                  if let Err(e) = self.change_section(i as isize) {
-                    return Err(e);
-                  }
-                  if let Err(e) = self.draw() {
-                    return Err(e);
-                  }
+            } else {
+              let mut i = 0;
+              let mut sec: isize = -1;
+              let mut found1 = false;
+              let mut found2 = false;
+              let mut ty = 0;
+              loop {
+                if i >= self.contents.len() {
                   break;
                 }
-              }
-              if found1 {
-                if self.sources[i].ty == 0 {
+                if found1 {
                   found2 = true;
+                  let sec2 = self.contents[i as usize] as isize;
+                  let ty2 = self.sources[sec2 as usize].ty;
+                  if (sec + 1) == sec2 && ty < ty2 {
+                    sec = sec2;
+                    ty = ty2;
+                  } else {
+                    sec = sec2;
+                    break;
+                  }
+                } else {
+                  if self.sources[self.contents[i]].seq == self.section {
+                    found1 = true;
+                    sec = self.contents[i as usize] as isize;
+                    ty = self.sources[sec as usize].ty;
+                  }
+                }
+                i += 1;
+              }
+
+              if found2 {
+                if let Err(e) = self.change_section(sec) {
+                  return Err(e);
+                }
+                if let Err(e) = self.draw() {
+                  return Err(e);
                 }
               }
-              if self.sources[i].seq == sec {
-                found1 = true;
-              }
-              i += 1;
             }
           }
 
-          MoveType::BkSec => {
-            let mut i: isize = self.sources.len() as isize - 1;
-            let mut found1 = false;
-            let mut found2 = false;
-            let mut found3 = false;
-            loop {
-              if i < 0 {
-                break;
-              }
-              if found2 {
-                if self.sources[i as usize].ty != 0 {
-                  //log!("***next section={}", i);
-                  if let Err(e) = self.change_section(i as isize) {
-                    return Err(e);
-                  }
-                  if let Err(e) = self.draw() {
-                    return Err(e);
-                  }
-                  found3 = true;
+          // 前の段・節に戻る
+          FuncType::BkSec => {
+            if self.section != DOC_TOP {
+              let mut i: isize = self.contents.len() as isize - 1;
+              let mut sec: isize = -1;
+              let mut found1 = false;
+              let mut found2 = false;
+              let mut ty = 0;
+              loop {
+                if i < 0 {
                   break;
                 }
-              }
-              if found1 {
-                if self.sources[i as usize].ty == 0 {
-                  found2 = true;
+                if found1 {
+                  if found2 {
+                    let sec2 = self.contents[i as usize] as isize;
+                    let ty2 = self.sources[sec2 as usize].ty;
+                    if (sec2 + 1) == sec && ty > ty2 {
+                      sec = sec2;
+                      ty = ty2;
+                    } else {
+                      break;
+                    }
+                  } else {
+                    found2 = true;
+                    sec = self.contents[i as usize] as isize;
+                    ty = self.sources[sec as usize].ty;
+                  }
+                } else {
+                  if self.sources[self.contents[i as usize]].seq == self.section {
+                    found1 = true;
+                  }
                 }
+                i -= 1;
               }
-              if self.sources[i as usize].seq == self.section {
-                found1 = true;
+
+              if sec == -1 {
+                sec = DOC_TOP;
               }
-              i -= 1;
-            }
-            if found3 == false {
-              if let Err(e) = self.change_section(DOC_TOP) {
+              //log!("***next section={}", sec);
+              if let Err(e) = self.change_section(sec) {
                 return Err(e);
               }
               if let Err(e) = self.draw() {
@@ -726,7 +750,7 @@ impl Manager {
               } else {
                 match mt {
                   // 末尾に進む
-                  MoveType::FdBottom => {
+                  FuncType::FdBottom => {
                     if self.is_vertical {
                       ps.pos = ps.panel_width - (ps.width * 0.6);
 
@@ -747,7 +771,7 @@ impl Manager {
                   }
 
                   // 先頭に戻る
-                  MoveType::BkTop => {
+                  FuncType::BkTop => {
                     ps.pos = 0.0;
 
                     if let Err(e) = self.draw() {
@@ -766,7 +790,7 @@ impl Manager {
         if let Some(pc) = &mut self.pcon {
           match mt {
             // 末尾に進む
-            MoveType::FdBottom => {
+            FuncType::FdBottom => {
               if self.is_vertical {
                 pc.pos = pc.panel_width - (pc.width * 0.6);
 
@@ -787,7 +811,7 @@ impl Manager {
             }
 
             // 先頭に戻る
-            MoveType::BkTop => {
+            FuncType::BkTop => {
               pc.pos = 0.0;
 
               if let Err(e) = self.draw() {

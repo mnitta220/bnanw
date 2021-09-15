@@ -1,6 +1,6 @@
 use super::super::manager;
 use super::super::model::token;
-use super::super::MoveType;
+use super::super::FuncType;
 use super::area;
 use super::canvas;
 use super::panel;
@@ -459,7 +459,7 @@ impl panel::Panel for PanelSection {
 
 impl PanelSection {
   /// 黒塗りを移動する
-  pub fn black_step(&mut self, mt: MoveType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
+  pub fn black_step(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
     /*
     log!(
       "***black_step start self.black_source={} self.black_token={}",
@@ -471,7 +471,7 @@ impl PanelSection {
 
     match mt {
       // 1区切り進む
-      MoveType::FdSlash => {
+      FuncType::FdSlash => {
         let mut s: i32 = 0;
 
         for pl in &self.plines {
@@ -577,7 +577,7 @@ impl PanelSection {
       }
 
       // 1区切り戻る
-      MoveType::BkSlash => {
+      FuncType::BkSlash => {
         let mut s: i32 = 0;
         let mut i: usize;
         let mut j: usize = self.plines.len();
@@ -673,7 +673,7 @@ impl PanelSection {
       }
 
       // 1単語進む
-      MoveType::FdOne => {
+      FuncType::FdOne => {
         let mut s: i32 = 0;
 
         for pl in &self.plines {
@@ -800,7 +800,7 @@ impl PanelSection {
       }
 
       // 末尾に進む
-      MoveType::FdBottom => {
+      FuncType::FdBottom => {
         self.black_source = 0;
         self.black_token = 0;
 
@@ -828,7 +828,7 @@ impl PanelSection {
       }
 
       // 先頭に戻る
-      MoveType::BkTop => {
+      FuncType::BkTop => {
         self.pos = 0.0;
         self.black_token = 0;
 

@@ -10,8 +10,8 @@ use std::cell::RefCell;
 use wasm_bindgen::prelude::*;
 use web_sys::FontFace;
 
-// 黒塗り移動
-pub enum MoveType {
+// ツールボタン操作タイプ
+pub enum FuncType {
   // 1区切り進む
   FdSlash,
   // 1区切り戻る
@@ -463,7 +463,7 @@ pub fn mode_change(black: bool) -> Result<(), JsValue> {
   Ok(())
 }
 
-/// 黒塗りを移動する
+/// ツールボタンの操作
 ///
 /// # 引数
 ///
@@ -480,18 +480,18 @@ pub fn mode_change(black: bool) -> Result<(), JsValue> {
 /// なし
 ///
 #[wasm_bindgen]
-pub fn black_step(step: i32) -> Result<(), JsValue> {
-  //log!("***black_step {}", step);
-  let mt: MoveType;
+pub fn tool_func(step: i32) -> Result<(), JsValue> {
+  //log!("***tool_func {}", step);
+  let mt: FuncType;
 
   match step {
-    1 => mt = MoveType::FdSlash,
-    2 => mt = MoveType::BkSlash,
-    3 => mt = MoveType::FdOne,
-    4 => mt = MoveType::FdBottom,
-    5 => mt = MoveType::BkTop,
-    6 => mt = MoveType::FdSec,
-    7 => mt = MoveType::BkSec,
+    1 => mt = FuncType::FdSlash,
+    2 => mt = FuncType::BkSlash,
+    3 => mt = FuncType::FdOne,
+    4 => mt = FuncType::FdBottom,
+    5 => mt = FuncType::BkTop,
+    6 => mt = FuncType::FdSec,
+    7 => mt = FuncType::BkSec,
     _ => {
       return Err(JsValue::from_str(&format!(
         "black_step invalid step:{}",
@@ -500,7 +500,7 @@ pub fn black_step(step: i32) -> Result<(), JsValue> {
     }
   }
 
-  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().black_step(mt) {
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().tool_func(mt) {
     Err(e) => {
       return Err(JsValue::from_str(&format!("black_step failed!: {}", e)));
     }
