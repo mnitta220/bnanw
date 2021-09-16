@@ -86,6 +86,13 @@ impl ScrollBar {
           .fill_rect(self.p1 + 3.0, self.y + 2.0, self.p2 - self.p1 - 6.0, 6.0);
       }
     } else {
+      /*
+      log!(
+        "***ScrollBar.draw: panel_width={} width={}",
+        self.panel_width,
+        self.width
+      );
+      */
       if is_dark {
         cv.context.set_fill_style(&JsValue::from_str("#333333"));
       } else {

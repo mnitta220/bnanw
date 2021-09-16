@@ -29,8 +29,11 @@ pub enum FuncType {
 }
 
 pub enum TabType {
+  // 本文
   TabText,
+  // 目次
   TabContents,
+  // 白板
   TabBoard,
 }
 
@@ -309,8 +312,9 @@ pub fn resize(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
 ///
 /// # 引数
 /// ## tab
-/// - false: 本文
-/// - true: 目次
+/// - 0: 本文
+/// - 1: 目次
+/// - 2: 白板
 ///
 /// # 戻り値
 /// なし

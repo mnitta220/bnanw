@@ -72,7 +72,7 @@ impl panel::Panel for PanelContents {
 
       pc.width = cv.width;
       pc.height = cv.height;
-      let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * pc.count_lines() as f64;
+      let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * (pc.count_lines() + 1) as f64;
       pc.set_panel_width(panel_width);
     }
     //log!("***PanelContents.new6");
@@ -94,15 +94,21 @@ impl panel::Panel for PanelContents {
       let mut diff: f64 = 0.0;
 
       if self.is_vertical {
-        let mut x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+        let mut x: f64;
 
-        if sb.bar_touching {
-          diff = (sb.start_x - sb.cur_x) as f64 * sb.panel_width / sb.width;
-        } else if self.touching {
-          diff = (self.cur_x - self.start_x) as f64;
+        if sb.panel_width > sb.width {
+          x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+
+          if sb.bar_touching {
+            diff = (sb.start_x - sb.cur_x) as f64 * sb.panel_width / sb.width;
+          } else if self.touching {
+            diff = (self.cur_x - self.start_x) as f64;
+          }
+
+          x += diff;
+        } else {
+          x = sb.width - cv.met - cv.ruby_w;
         }
-
-        x += diff;
 
         let mut is_gray = false;
 
@@ -130,15 +136,36 @@ impl panel::Panel for PanelContents {
           is_gray = !is_gray;
         }
       } else {
-        let mut y = self.pos + cv.met + cv.ruby_w;
+        let mut y: f64;
 
-        if sb.bar_touching {
-          diff = (sb.start_y - sb.cur_y) as f64 * sb.panel_width / sb.width;
-        } else if self.touching {
-          diff = (self.cur_y - self.start_y) as f64;
+        if sb.panel_width > sb.width {
+          /*
+          let p = sb.width / 3.0;
+          log!(
+            "***PanelContents.draw: sb.panel_width={}, sb.width={}, p={}, self.pos={}",
+            sb.panel_width,
+            sb.width,
+            p,
+            self.pos
+          );
+          if (sb.panel_width + self.pos) < p {
+            y = p * 2.0 - sb.panel_width;
+            log!("***PanelContents.draw: y={}", y);
+          } else {
+            */
+          y = self.pos + cv.met + cv.ruby_w;
+
+          if sb.bar_touching {
+            diff = (sb.start_y - sb.cur_y) as f64 * sb.panel_width / sb.width;
+          } else if self.touching {
+            diff = (self.cur_y - self.start_y) as f64;
+          }
+
+          y += diff;
+          //}
+        } else {
+          y = cv.met + cv.ruby_w;
         }
-
-        y += diff;
 
         let mut is_gray = false;
 
