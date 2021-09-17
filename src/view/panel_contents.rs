@@ -106,8 +106,14 @@ impl panel::Panel for PanelContents {
           }
 
           x += diff;
+          let p = sb.panel_width - self.pos;
+          if sb.width * 0.6 > p {
+            self.pos = sb.panel_width - sb.width * 0.6;
+            x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+          }
         } else {
           x = sb.width - cv.met - cv.ruby_w;
+          self.pos = 0.0;
         }
 
         let mut is_gray = false;
@@ -139,20 +145,6 @@ impl panel::Panel for PanelContents {
         let mut y: f64;
 
         if sb.panel_width > sb.width {
-          /*
-          let p = sb.width / 3.0;
-          log!(
-            "***PanelContents.draw: sb.panel_width={}, sb.width={}, p={}, self.pos={}",
-            sb.panel_width,
-            sb.width,
-            p,
-            self.pos
-          );
-          if (sb.panel_width + self.pos) < p {
-            y = p * 2.0 - sb.panel_width;
-            log!("***PanelContents.draw: y={}", y);
-          } else {
-            */
           y = self.pos + cv.met + cv.ruby_w;
 
           if sb.bar_touching {
@@ -162,9 +154,14 @@ impl panel::Panel for PanelContents {
           }
 
           y += diff;
-          //}
+          let p = sb.panel_width + self.pos;
+          if sb.width * 0.6 > p {
+            self.pos = sb.width * 0.6 - sb.panel_width;
+            y = self.pos + cv.met + cv.ruby_w;
+          }
         } else {
           y = cv.met + cv.ruby_w;
+          self.pos = 0.0;
         }
 
         let mut is_gray = false;
