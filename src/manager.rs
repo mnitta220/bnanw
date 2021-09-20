@@ -20,6 +20,7 @@ pub struct Manager {
   pub section: isize,
   pub pcon: Option<view::panel_contents::PanelContents>,
   pub psec: Option<view::panel_section::PanelSection>,
+  pub pbox: Option<view::panel_box::PanelBox>,
   pub pbd: Option<view::panel_board::PanelBoard>,
   pub canvas: Option<view::canvas::Canvas>,
   pub click_handle: Vec<super::click::ClickHandle>,
@@ -41,6 +42,7 @@ impl Manager {
       section: 0,
       pcon: None,
       psec: None,
+      pbox: None,
       pbd: None,
       canvas: None,
       click_handle: Vec::new(),
@@ -81,6 +83,7 @@ impl Manager {
     self.canvas = None;
     self.pcon = None;
     self.psec = None;
+    self.pbox = None;
     self.pbd = None;
 
     Ok(0)
@@ -155,6 +158,7 @@ impl Manager {
     self.canvas = Some(cv);
     self.pcon = Some(view::panel_contents::PanelContents::new(&self));
     self.psec = Some(view::panel_section::PanelSection::new(&self));
+    self.pbox = Some(view::panel_box::PanelBox::new(&self));
     self.pbd = Some(view::panel_board::PanelBoard::new(&self));
 
     if let Err(e) = self.change_section(self.section) {
@@ -318,6 +322,7 @@ impl Manager {
     //log!("***Manager.draw");
     match self.tab {
       TabType::TabContents => {
+        log!("***Manager.draw TabContents");
         if let Some(pc) = &mut self.pcon {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -334,6 +339,7 @@ impl Manager {
         }
       }
       TabType::TabText => {
+        log!("***Manager.draw TabText");
         if let Some(ps) = &mut self.psec {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -349,7 +355,20 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {
+        log!("***Manager.draw TabBox");
+        if let Some(bx) = &mut self.pbox {
+          if let Some(cv) = &self.canvas {
+            if let Err(e) = bx.draw(&cv, self.is_dark) {
+              return Err(e);
+            }
+          } else {
+            return Err("ERR_GET_CANVAS");
+          }
+        }
+      }
       TabType::TabBoard => {
+        log!("***Manager.draw TabBoard");
         if let Some(bd) = &mut self.pbd {
           if let Some(cv) = &self.canvas {
             if let Err(e) = bd.draw(&cv, self.is_dark) {
@@ -385,6 +404,7 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {}
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_start(x, y) {
@@ -434,6 +454,7 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {}
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_move(x, y) {
@@ -498,6 +519,7 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {}
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_end() {
@@ -539,6 +561,7 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {}
       TabType::TabBoard => {}
     }
 
@@ -823,6 +846,7 @@ impl Manager {
           }
         }
       }
+      TabType::TabBox => {}
       TabType::TabBoard => {}
     }
 

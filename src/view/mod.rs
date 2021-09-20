@@ -2,6 +2,7 @@ pub mod area;
 pub mod canvas;
 pub mod panel;
 pub mod panel_board;
+pub mod panel_box;
 pub mod panel_contents;
 pub mod panel_line;
 pub mod panel_section;

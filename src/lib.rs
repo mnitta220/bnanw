@@ -35,6 +35,8 @@ pub enum TabType {
   TabContents,
   // 白板
   TabBoard,
+  // 9Box
+  TabBox,
 }
 
 // 画面の情報をスレッドローカルのスタティックに保持する
@@ -315,33 +317,40 @@ pub fn resize(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
 /// - 0: 本文
 /// - 1: 目次
 /// - 2: 白板
+/// - 3: Box
 ///
 /// # 戻り値
 /// なし
 ///
 #[wasm_bindgen]
-pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
+pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<isize, JsValue> {
   //log!("***tab_change tab={}", tab);
+  let mut ret: isize = -1;
   let t: TabType;
   match tab {
     1 => t = TabType::TabContents,
     2 => t = TabType::TabBoard,
+    3 => t = TabType::TabBox,
     _ => t = TabType::TabText,
   }
 
   if let Err(e1) = MANAGER.with(
     |mg| match mg.borrow_mut().tab_change(t, width, height, is_dark) {
+      Ok(r) => {
+        ret = r;
+
+        Ok(ret)
+      }
+
       Err(e) => {
         return Err(JsValue::from_str(&format!("tab_change failed!: {}", e)));
       }
-
-      _ => Ok(()),
     },
   ) {
     return Err(JsValue::from_str(&format!("tab_change failed!: {:?}", e1)));
   }
 
-  Ok(())
+  Ok(ret)
 }
 
 /// タッチ開始
