@@ -1,4 +1,6 @@
+use super::model::boxs;
 use super::model::source;
+use super::model::token;
 use super::util;
 use super::view;
 use super::FuncType;
@@ -99,6 +101,48 @@ impl Manager {
     }
 
     self.sources.push(source);
+
+    Ok(0)
+  }
+
+  /// Boxツリーを生成する
+  pub fn build_box(&mut self) -> Result<isize, &'static str> {
+    log!("***Manager.build_box");
+    let mut b9: boxs::Box9;
+    let root = boxs::Box9::new();
+    let mut bl: boxs::BoxLine;
+
+    b9 = boxs::Box9::new();
+    bl = boxs::BoxLine::new();
+    b9.lines.push(bl);
+
+    for s in &self.sources {
+      if s.ty == 0 {
+        //
+
+        for t in &s.tokens {
+          log!("***Manager.build_box token={}", t.to_string());
+          match t.ty {
+            token::TokenType::Zenkaku
+            | token::TokenType::Zenkigo
+            | token::TokenType::Kana
+            | token::TokenType::Yousoku
+            | token::TokenType::Alpha
+            | token::TokenType::Hankigo
+            | token::TokenType::Kuten => {
+              for c in t.word.chars() {
+                let b1 = boxs::Box1::new(false, s.seq, c);
+                bl.boxs.push(b1);
+              }
+            }
+            _ => {}
+          }
+        }
+      } else {
+        //
+      }
+      //a
+    }
 
     Ok(0)
   }
@@ -322,7 +366,7 @@ impl Manager {
     //log!("***Manager.draw");
     match self.tab {
       TabType::TabContents => {
-        log!("***Manager.draw TabContents");
+        //log!("***Manager.draw TabContents");
         if let Some(pc) = &mut self.pcon {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -339,7 +383,7 @@ impl Manager {
         }
       }
       TabType::TabText => {
-        log!("***Manager.draw TabText");
+        //log!("***Manager.draw TabText");
         if let Some(ps) = &mut self.psec {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -356,7 +400,7 @@ impl Manager {
         }
       }
       TabType::TabBox => {
-        log!("***Manager.draw TabBox");
+        //log!("***Manager.draw TabBox");
         if let Some(bx) = &mut self.pbox {
           if let Some(cv) = &self.canvas {
             if let Err(e) = bx.draw(&cv, self.is_dark) {
@@ -368,7 +412,7 @@ impl Manager {
         }
       }
       TabType::TabBoard => {
-        log!("***Manager.draw TabBoard");
+        //log!("***Manager.draw TabBoard");
         if let Some(bd) = &mut self.pbd {
           if let Some(cv) = &self.canvas {
             if let Err(e) = bd.draw(&cv, self.is_dark) {

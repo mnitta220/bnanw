@@ -240,6 +240,30 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
   Ok(())
 }
 
+/// Boxツリーを生成する
+///
+/// # 引数
+/// なし
+///
+/// # 戻り値
+/// なし
+///
+#[wasm_bindgen]
+pub fn build_box() -> Result<(), JsValue> {
+  log!("***build_box");
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().build_box() {
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("build_box failed!: {}", e)));
+    }
+
+    _ => Ok(()),
+  }) {
+    return Err(JsValue::from_str(&format!("build_box failed!: {:?}", e1)));
+  }
+
+  Ok(())
+}
+
 /// 文書を表示する
 ///
 /// # 引数
@@ -316,8 +340,8 @@ pub fn resize(width: i32, height: i32, is_dark: bool) -> Result<(), JsValue> {
 /// ## tab
 /// - 0: 本文
 /// - 1: 目次
-/// - 2: 白板
-/// - 3: Box
+/// - 2: Box
+/// - 3: 白板
 ///
 /// # 戻り値
 /// なし
@@ -329,8 +353,8 @@ pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<is
   let t: TabType;
   match tab {
     1 => t = TabType::TabContents,
-    2 => t = TabType::TabBoard,
-    3 => t = TabType::TabBox,
+    2 => t = TabType::TabBox,
+    3 => t = TabType::TabBoard,
     _ => t = TabType::TabText,
   }
 
