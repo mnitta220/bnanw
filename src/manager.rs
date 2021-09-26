@@ -1,4 +1,4 @@
-use super::model::boxs;
+//use super::model::boxs;
 use super::model::source;
 use super::model::token;
 use super::util;
@@ -104,49 +104,26 @@ impl Manager {
 
     Ok(0)
   }
+  /*
+    /// Boxツリーを生成する
+    pub fn build_box(&mut self) -> Result<isize, &'static str> {
+      log!("***Manager.build_box");
+      //let mut b9: boxs::Box9;
+      let root = boxs::Box9::new();
+      //let mut bl: boxs::BoxLine;
 
-  /// Boxツリーを生成する
-  pub fn build_box(&mut self) -> Result<isize, &'static str> {
-    log!("***Manager.build_box");
-    let mut b9: boxs::Box9;
-    let root = boxs::Box9::new();
-    let mut bl: boxs::BoxLine;
+      let mut b9 = boxs::Box9::new();
+      let mut pos: isize = 0;
+      //let mut bl = boxs::BoxLine::new();
+      //b9.lines.push(bl);
 
-    b9 = boxs::Box9::new();
-    bl = boxs::BoxLine::new();
-    b9.lines.push(bl);
-
-    for s in &self.sources {
-      if s.ty == 0 {
-        //
-
-        for t in &s.tokens {
-          log!("***Manager.build_box token={}", t.to_string());
-          match t.ty {
-            token::TokenType::Zenkaku
-            | token::TokenType::Zenkigo
-            | token::TokenType::Kana
-            | token::TokenType::Yousoku
-            | token::TokenType::Alpha
-            | token::TokenType::Hankigo
-            | token::TokenType::Kuten => {
-              for c in t.word.chars() {
-                let b1 = boxs::Box1::new(false, s.seq, c);
-                bl.boxs.push(b1);
-              }
-            }
-            _ => {}
-          }
-        }
-      } else {
-        //
+      for s in &self.sources {
+        //s.sprit_box_line();
       }
-      //a
+
+      Ok(0)
     }
-
-    Ok(0)
-  }
-
+  */
   /// 文書を表示する
   pub fn draw_doc(
     &mut self,
@@ -403,7 +380,7 @@ impl Manager {
         //log!("***Manager.draw TabBox");
         if let Some(bx) = &mut self.pbox {
           if let Some(cv) = &self.canvas {
-            if let Err(e) = bx.draw(&cv, self.is_dark) {
+            if let Err(e) = bx.draw(&cv, self.is_dark, &self.sources) {
               return Err(e);
             }
           } else {
@@ -630,7 +607,7 @@ impl Manager {
     if let Some(pc) = &mut self.pcon {
       //pc.current = section;
       if let Some(cv) = &self.canvas {
-        pc.set_current(section, &cv)
+        pc.set_current(section, &cv);
       }
     }
 

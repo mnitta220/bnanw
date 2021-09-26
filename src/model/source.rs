@@ -21,12 +21,33 @@ impl fmt::Display for Align {
   }
 }
 
+pub struct BoxLine {
+  pub token1: isize,
+  pub word1: isize,
+  pub token2: isize,
+  pub word2: isize,
+}
+
+impl BoxLine {
+  pub fn new(token1: isize, word1: isize, token2: isize, word2: isize) -> Self {
+    let l = BoxLine {
+      token1,
+      word1,
+      token2,
+      word2,
+    };
+
+    l
+  }
+}
+
 pub struct Source {
   pub seq: isize,
   pub ty: isize,
   pub text: String,
   pub align: Align,
   pub tokens: Vec<token::Token>,
+  pub box_lines: Vec<BoxLine>,
 }
 
 impl Source {
@@ -37,9 +58,11 @@ impl Source {
       text: String::from(text),
       align: Align::None,
       tokens: Vec::new(),
+      box_lines: Vec::new(),
     };
 
     s.tokenize();
+    s.sprit_box_line();
 
     s
   }
@@ -290,6 +313,89 @@ impl Source {
     if buf_type != token::TokenType::None {
       token = token::Token::new(buf_type, buf.as_ref());
       self.tokens.push(token);
+    }
+  }
+
+  pub fn sprit_box_line(&mut self) {
+    self.box_lines.clear();
+    if self.ty == 0 {
+      let mut t1 = -1;
+      let mut w1 = -1;
+      let mut t2 = -1;
+      let mut w2 = -1;
+      let mut l = 0;
+      let mut i = 0;
+
+      for t in &self.tokens {
+        match t.ty {
+          token::TokenType::Zenkaku
+          | token::TokenType::Zenkigo
+          | token::TokenType::Kana
+          | token::TokenType::Yousoku
+          | token::TokenType::Hankigo => {
+            let mut j = 0;
+            for c in t.word.chars() {
+              if t1 == -1 {
+                t1 = i;
+                w1 = j;
+              }
+              if l > 2 {
+                let bl = BoxLine::new(t1, w1, t2, w2);
+                self.box_lines.push(bl);
+                t1 = i;
+                w1 = j;
+                l = 1;
+              } else {
+                l += 1;
+              }
+              t2 = i;
+              w2 = j;
+              j += 1;
+            }
+          }
+          token::TokenType::Alpha => {
+            if t1 != -1 {
+              if l > 0 {
+                let bl = BoxLine::new(t1, w1, t2, w2);
+                self.box_lines.push(bl);
+              }
+            }
+            let bl = BoxLine::new(i, 0, i, t.word.len() as isize - 1);
+            self.box_lines.push(bl);
+            t1 = -1;
+            l = 0;
+          }
+          token::TokenType::Kuten => {
+            let mut j = 0;
+            for c in t.word.chars() {
+              if t1 == -1 {
+                t1 = i;
+                w1 = j;
+              }
+              if l > 3 {
+                let bl = BoxLine::new(t1, w1, t2, w2);
+                self.box_lines.push(bl);
+                t1 = i;
+                w1 = j;
+                l = 1;
+              } else {
+                l += 1;
+              }
+              t2 = i;
+              w2 = j;
+              j += 1;
+            }
+          }
+          _ => {}
+        }
+
+        i += 1;
+      }
+
+      if t1 != -1 {
+        let bl = BoxLine::new(t1, w1, t2, w2);
+        self.box_lines.push(bl);
+      }
     }
   }
 

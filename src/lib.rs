@@ -240,6 +240,7 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
   Ok(())
 }
 
+/*
 /// Boxツリーを生成する
 ///
 /// # 引数
@@ -263,6 +264,7 @@ pub fn build_box() -> Result<(), JsValue> {
 
   Ok(())
 }
+*/
 
 /// 文書を表示する
 ///
