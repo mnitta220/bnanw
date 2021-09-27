@@ -378,6 +378,8 @@ impl Manager {
       }
       TabType::TabBox => {
         //log!("***Manager.draw TabBox");
+        return self.draw_box();
+        /*
         if let Some(bx) = &mut self.pbox {
           if let Some(cv) = &self.canvas {
             if let Err(e) = bx.draw(&cv, self.is_dark, &self.sources) {
@@ -387,6 +389,7 @@ impl Manager {
             return Err("ERR_GET_CANVAS");
           }
         }
+        */
       }
       TabType::TabBoard => {
         //log!("***Manager.draw TabBoard");
@@ -399,6 +402,53 @@ impl Manager {
             return Err("ERR_GET_CANVAS");
           }
         }
+      }
+    }
+
+    Ok(0)
+  }
+
+  fn draw_box(&mut self) -> Result<isize, &'static str> {
+    if let Some(bx) = &mut self.pbox {
+      if let Some(cv) = &self.canvas {
+        let mut ty = 1;
+        let mut seq = -1;
+        let mut is_first = true;
+        cv.clear(self.is_dark);
+        bx.set_info(30, &cv);
+
+        for s in &self.sources {
+          if s.ty == 0 {
+            if seq == -1 {
+              seq = s.seq;
+              if ty == 1 {
+                for t in &s.tokens {
+                  match t.ty {
+                    token::TokenType::Zenkaku
+                    | token::TokenType::Zenkigo
+                    | token::TokenType::Kana
+                    | token::TokenType::Yousoku
+                    | token::TokenType::Hankigo => {
+                      bx.draw_sec(&cv, self.is_dark, ty, s.seq, 0, t.word.as_str(), is_first);
+                      is_first = false;
+                      break;
+                    }
+                    _ => {}
+                  }
+                }
+              }
+            }
+          } else {
+            ty = s.ty;
+            seq = -1;
+          }
+        }
+
+        bx.draw_frame(1, &cv, self.is_dark);
+        bx.draw_frame(2, &cv, self.is_dark);
+        bx.draw_base(&cv, self.is_dark);
+      } else {
+        return Err("ERR_GET_CANVAS");
       }
     }
 
