@@ -240,8 +240,7 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
   Ok(())
 }
 
-/*
-/// Boxツリーを生成する
+/// 文書ツリーを生成する
 ///
 /// # 引数
 /// なし
@@ -250,21 +249,20 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
 /// なし
 ///
 #[wasm_bindgen]
-pub fn build_box() -> Result<(), JsValue> {
-  log!("***build_box");
-  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().build_box() {
+pub fn build_tree() -> Result<(), JsValue> {
+  log!("***build_tree");
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().build_tree() {
     Err(e) => {
-      return Err(JsValue::from_str(&format!("build_box failed!: {}", e)));
+      return Err(JsValue::from_str(&format!("build_tree failed!: {}", e)));
     }
 
     _ => Ok(()),
   }) {
-    return Err(JsValue::from_str(&format!("build_box failed!: {:?}", e1)));
+    return Err(JsValue::from_str(&format!("build_tree failed!: {:?}", e1)));
   }
 
   Ok(())
 }
-*/
 
 /// 文書を表示する
 ///

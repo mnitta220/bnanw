@@ -1,4 +1,5 @@
 //use super::model::boxs;
+use super::model::contents;
 use super::model::source;
 use super::model::token;
 use super::util;
@@ -24,6 +25,7 @@ pub struct Manager {
   pub psec: Option<view::panel_section::PanelSection>,
   pub pbox: Option<view::panel_box::PanelBox>,
   pub pbd: Option<view::panel_board::PanelBoard>,
+  pub tree: Option<super::model::contents::ContentsTree>,
   pub canvas: Option<view::canvas::Canvas>,
   pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
@@ -46,6 +48,7 @@ impl Manager {
       psec: None,
       pbox: None,
       pbd: None,
+      tree: None,
       canvas: None,
       click_handle: Vec::new(),
       font_loaded: false,
@@ -104,6 +107,15 @@ impl Manager {
 
     Ok(0)
   }
+
+  /// 文書ツリーを生成する
+  pub fn build_tree(&mut self) -> Result<isize, &'static str> {
+    log!("***Manager.build_tree");
+    self.tree = Some(super::model::contents::ContentsTree::new(&self));
+    //a
+    Ok(0)
+  }
+
   /*
     /// Boxツリーを生成する
     pub fn build_box(&mut self) -> Result<isize, &'static str> {
@@ -409,13 +421,118 @@ impl Manager {
   }
 
   fn draw_box(&mut self) -> Result<isize, &'static str> {
+    log!("***Manager.draw_box");
     if let Some(bx) = &mut self.pbox {
       if let Some(cv) = &self.canvas {
-        let mut ty = 1;
-        let mut seq = -1;
-        let mut is_first = true;
         cv.clear(self.is_dark);
         bx.set_info(30, &cv);
+        if let Some(tr) = &self.tree {
+          if let Some(rt) = &tr.root {
+            let mut i = 0;
+            loop {
+              if i >= rt.children.len() {
+                break;
+              }
+              let ch = &rt.children[i];
+              let mut lb = "***";
+              if let Some(l) = &ch.label {
+                lb = l;
+              }
+              log!("***Manager.draw_box: {}", lb);
+              i += 1;
+            }
+          }
+        }
+        bx.draw_frame(1, &cv, self.is_dark);
+        bx.draw_frame(2, &cv, self.is_dark);
+        bx.draw_frame(3, &cv, self.is_dark);
+        bx.draw_base(&cv, self.is_dark);
+        //a
+        /*
+        let mut v1: Vec<isize> = Vec::new();
+        let mut i1 = 0;
+        //let mut sc = 0;
+        //let a = &self.sources[1];
+        for s in &self.sources {
+          if s.ty == 1 {
+            //sc += 1;
+            //if sc > 9 {
+            //  sc = 0;
+            //}
+            if v1.len() > 8 {
+              v1.clear();
+            }
+            v1.push(s.seq);
+            if s.seq == self.section {
+              //
+            }
+          }
+          i1 += 1;
+        }
+        */
+        /*
+        let mut ty = 1;
+        let mut seq = -1;
+        let mut s1 = -1;
+        let mut s2 = -1;
+        let mut s3 = -1;
+        let mut s4 = -1;
+        let mut s5 = -1;
+        let mut s6 = -1;
+        let mut is_first = true;
+        //let mut found = false;
+        let mut sec = -1;
+        cv.clear(self.is_dark);
+        bx.set_info(30, &cv);
+
+        for s in &self.sources {
+          if s.seq == self.section {
+            sec = self.section;
+            break;
+          }
+
+          match s.ty {
+            1 => {
+              s1 = s.seq;
+              s2 = -1;
+              s3 = -1;
+              s4 = -1;
+              s5 = -1;
+              s6 = -1;
+            }
+            2 => {
+              s2 = s.seq;
+              s3 = -1;
+              s4 = -1;
+              s5 = -1;
+              s6 = -1;
+            }
+            3 => {
+              s3 = s.seq;
+              s4 = -1;
+              s5 = -1;
+              s6 = -1;
+            }
+            4 => {
+              s4 = s.seq;
+              s5 = -1;
+              s6 = -1;
+            }
+            5 => {
+              s5 = s.seq;
+              s6 = -1;
+            }
+            6 => {
+              s6 = s.seq;
+            }
+            _ => {}
+          }
+        }
+
+        let mut l = 0;
+        if s1 != -1 {
+          l += 1;
+        }
 
         for s in &self.sources {
           if s.ty == 0 {
@@ -446,7 +563,9 @@ impl Manager {
 
         bx.draw_frame(1, &cv, self.is_dark);
         bx.draw_frame(2, &cv, self.is_dark);
-        bx.draw_base(&cv, self.is_dark);
+        bx.draw_frame(3, &cv, self.is_dark);
+        */
+        //bx.draw_base(&cv, self.is_dark);
       } else {
         return Err("ERR_GET_CANVAS");
       }

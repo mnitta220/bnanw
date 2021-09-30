@@ -39,6 +39,7 @@ impl fmt::Display for TokenType {
   }
 }
 
+#[derive(Clone, Debug)]
 pub struct Token {
   pub ty: TokenType,
   pub word: String,

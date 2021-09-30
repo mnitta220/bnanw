@@ -21,6 +21,7 @@ impl fmt::Display for Align {
   }
 }
 
+/*
 pub struct BoxLine {
   pub token1: isize,
   pub word1: isize,
@@ -40,6 +41,7 @@ impl BoxLine {
     l
   }
 }
+*/
 
 pub struct Source {
   pub seq: isize,
@@ -47,7 +49,7 @@ pub struct Source {
   pub text: String,
   pub align: Align,
   pub tokens: Vec<token::Token>,
-  pub box_lines: Vec<BoxLine>,
+  //pub box_lines: Vec<BoxLine>,
 }
 
 impl Source {
@@ -58,7 +60,7 @@ impl Source {
       text: String::from(text),
       align: Align::None,
       tokens: Vec::new(),
-      box_lines: Vec::new(),
+      //box_lines: Vec::new(),
     };
 
     s.tokenize();

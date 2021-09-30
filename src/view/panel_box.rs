@@ -385,6 +385,7 @@ impl PanelBox {
     }
   }
 
+/*
   pub fn draw(
     &mut self,
     cv: &canvas::Canvas,
@@ -393,16 +394,6 @@ impl PanelBox {
   ) -> Result<isize, &'static str> {
     let mut ty: isize = 0;
     cv.clear(is_dark);
-    /*
-    if let Some(sb) = &mut self.scroll_bar {
-      sb.width = cv.height - 2.0;
-      match sb.draw(&cv, 0.0, is_dark) {
-        Err(e) => return Err(e),
-
-        _ => {}
-      }
-    }
-    */
 
     self.draw_box(cv, is_dark);
 
@@ -456,7 +447,7 @@ impl PanelBox {
         //
       }
     }
-    /*
+    //
     let font: &str;
     font = "30pt Arial";
     cv.context.set_font(font);
@@ -621,7 +612,7 @@ impl PanelBox {
     cv.context.line_to(140.0, 130.0);
     cv.context.line_to(100.0, 100.0);
     cv.context.stroke();
-    */
+    //
 
     cv.context.set_line_width(3.0);
     if is_dark {
@@ -810,6 +801,7 @@ impl PanelBox {
     cv.context.line_to(100.0, 100.0);
     cv.context.stroke();
   }
+*/
 
   /// タッチ開始
   pub fn touch_start(&mut self, x: i32, y: i32) -> Result<(), &'static str> {
