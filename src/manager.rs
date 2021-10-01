@@ -1,7 +1,7 @@
 //use super::model::boxs;
-use super::model::contents;
+//use super::model::contents;
 use super::model::source;
-use super::model::token;
+//use super::model::token;
 use super::util;
 use super::view;
 use super::FuncType;
@@ -25,7 +25,7 @@ pub struct Manager {
   pub psec: Option<view::panel_section::PanelSection>,
   pub pbox: Option<view::panel_box::PanelBox>,
   pub pbd: Option<view::panel_board::PanelBoard>,
-  pub tree: Option<super::model::contents::ContentsTree>,
+  //pub tree: Option<super::model::contents::ContentsTree>,
   pub canvas: Option<view::canvas::Canvas>,
   pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
@@ -48,7 +48,7 @@ impl Manager {
       psec: None,
       pbox: None,
       pbd: None,
-      tree: None,
+      //tree: None,
       canvas: None,
       click_handle: Vec::new(),
       font_loaded: false,
@@ -111,7 +111,8 @@ impl Manager {
   /// 文書ツリーを生成する
   pub fn build_tree(&mut self) -> Result<isize, &'static str> {
     log!("***Manager.build_tree");
-    self.tree = Some(super::model::contents::ContentsTree::new(&self));
+    //self.tree = Some(super::model::contents::ContentsTree::new(&self));
+    self.pbox = Some(view::panel_box::PanelBox::new(&self));
     //a
     Ok(0)
   }
@@ -191,7 +192,7 @@ impl Manager {
     self.canvas = Some(cv);
     self.pcon = Some(view::panel_contents::PanelContents::new(&self));
     self.psec = Some(view::panel_section::PanelSection::new(&self));
-    self.pbox = Some(view::panel_box::PanelBox::new(&self));
+    //self.pbox = Some(view::panel_box::PanelBox::new(&self));
     self.pbd = Some(view::panel_board::PanelBoard::new(&self));
 
     if let Err(e) = self.change_section(self.section) {
@@ -390,16 +391,29 @@ impl Manager {
       }
       TabType::TabBox => {
         //log!("***Manager.draw TabBox");
-        return self.draw_box();
-        /*
         if let Some(bx) = &mut self.pbox {
           if let Some(cv) = &self.canvas {
-            if let Err(e) = bx.draw(&cv, self.is_dark, &self.sources) {
+            let mut areas: Vec<view::area::Area> = Vec::new();
+
+            if let Err(e) = bx.draw(&cv, &mut areas, self.is_black, self.is_dark, 30) {
               return Err(e);
             }
+
+            bx.areas.clear();
+            bx.areas = areas;
           } else {
             return Err("ERR_GET_CANVAS");
           }
+        }
+        /*
+        if let Some(cv) = &self.canvas {
+          if let Some(bx) = &mut self.pbox {
+            cv.clear(self.is_dark);
+            bx.set_info(30, &cv);
+          }
+          return self.draw_box();
+        } else {
+          return Err("ERR_GET_CANVAS");
         }
         */
       }
@@ -420,33 +434,49 @@ impl Manager {
     Ok(0)
   }
 
+  /*
   fn draw_box(&mut self) -> Result<isize, &'static str> {
     log!("***Manager.draw_box");
-    if let Some(bx) = &mut self.pbox {
-      if let Some(cv) = &self.canvas {
+    if let Some(tr) = &self.tree {
+      if let Some(rt) = &tr.root {
+        //self.draw_box_sub(rt, 0);
+      }
+    }
+
+    Ok(0)
+  }
+  */
+
+  fn draw_box_old(&mut self) -> Result<isize, &'static str> {
+    log!("***Manager.draw_box");
+    if let Some(cv) = &self.canvas {
+      if let Some(bx) = &mut self.pbox {
         cv.clear(self.is_dark);
-        bx.set_info(30, &cv);
-        if let Some(tr) = &self.tree {
-          if let Some(rt) = &tr.root {
-            let mut i = 0;
-            loop {
-              if i >= rt.children.len() {
-                break;
-              }
-              let ch = &rt.children[i];
-              let mut lb = "***";
-              if let Some(l) = &ch.label {
-                lb = l;
-              }
-              log!("***Manager.draw_box: {}", lb);
-              i += 1;
-            }
+        //bx.set_info(30, &cv);
+        //if let Some(tr) = &self.tree {
+        //if let Some(rt) = &tr.root {
+        //self.draw_box_sub(rt, 0);
+        /*
+        let mut i = 0;
+        loop {
+          if i >= rt.children.len() {
+            break;
           }
+          let ch = &rt.children[i];
+          let mut lb = "***";
+          if let Some(l) = &ch.label {
+            lb = l;
+          }
+          log!("***Manager.draw_box: {}", lb);
+          i += 1;
         }
-        bx.draw_frame(1, &cv, self.is_dark);
-        bx.draw_frame(2, &cv, self.is_dark);
-        bx.draw_frame(3, &cv, self.is_dark);
-        bx.draw_base(&cv, self.is_dark);
+        */
+        //}
+        //}
+        //bx.draw_frame(1, &cv, self.is_dark);
+        //bx.draw_frame(2, &cv, self.is_dark);
+        //bx.draw_frame(3, &cv, self.is_dark);
+        //bx.draw_base(&cv, self.is_dark);
         //a
         /*
         let mut v1: Vec<isize> = Vec::new();
@@ -566,13 +596,41 @@ impl Manager {
         bx.draw_frame(3, &cv, self.is_dark);
         */
         //bx.draw_base(&cv, self.is_dark);
-      } else {
-        return Err("ERR_GET_CANVAS");
       }
+      /*
+      if let Some(tr) = &self.tree {
+        if let Some(rt) = &tr.root {
+          //self.draw_box_sub(rt, 0);
+        }
+      }
+      */
+    } else {
+      return Err("ERR_GET_CANVAS");
     }
 
     Ok(0)
   }
+
+  /*
+  fn draw_box_sub(&mut self, con: &contents::Content, lvl: isize) {
+    log!("***Manager.draw_box_sub: {}", lvl);
+    let mut i = 0;
+    loop {
+      if i >= con.children.len() {
+        break;
+      }
+      let ch = &con.children[i];
+      let mut lb = "***";
+      if let Some(l) = &ch.label {
+        lb = l;
+      }
+      log!("***Manager.draw_box_sub: label={}", lb);
+      self.draw_box_sub(ch, lvl + 1);
+      i += 1;
+    }
+    //a
+  }
+  */
 
   /// タッチ開始
   pub fn touch_start(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
