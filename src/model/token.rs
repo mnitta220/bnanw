@@ -57,3 +57,64 @@ impl Token {
     format!("Token: word={} ty={}", self.word, self.ty)
   }
 }
+
+#[derive(Clone, Debug)]
+pub struct Token2 {
+  pub seq: isize,
+  pub ty: TokenType,
+  pub word: String,
+  pub ruby: Option<Vec<Token2>>,
+}
+
+impl Token2 {
+  pub fn clone(token: &Token2) -> Self {
+    let mut ruby: Option<Vec<Token2>> = None;
+
+    if let Some(rb) = &token.ruby {
+      let mut v: Vec<Token2> = Vec::new();
+
+      for r in rb {
+        v.push(Token2::clone(r));
+      }
+
+      ruby = Some(v);
+    }
+
+    Token2 {
+      seq: token.seq,
+      ty: token.ty,
+      word: String::from(&token.word),
+      ruby: ruby,
+    }
+  }
+
+  pub fn to_string(&self) -> String {
+    let mut s = String::from("[");
+
+    if let Some(v) = &self.ruby {
+      for r in v {
+        s.push_str(&r.to_string());
+        s.push_str(", ");
+      }
+    }
+
+    s.push_str("]");
+
+    format!(
+      "PanelToken: seq={} word={} ty={} ruby={}",
+      self.seq, self.word, self.ty, s
+    )
+  }
+
+  pub fn ruby_len(&self) -> usize {
+    let mut w: usize = 0;
+
+    if let Some(rs) = &self.ruby {
+      for r in rs {
+        w += r.word.chars().count();
+      }
+    }
+
+    w
+  }
+}

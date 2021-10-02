@@ -459,10 +459,10 @@ impl panel::Panel for PanelSection {
 
 impl PanelSection {
   /// 黒塗りを移動する
-  pub fn black_step(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
+  pub fn tool_func(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
     /*
     log!(
-      "***black_step start self.black_source={} self.black_token={}",
+      "***tool_func start self.black_source={} self.black_token={}",
       self.black_source,
       self.black_token
     );

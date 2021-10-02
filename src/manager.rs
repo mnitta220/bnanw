@@ -1008,7 +1008,7 @@ impl Manager {
             if let Some(ps) = &mut self.psec {
               if self.is_black {
                 if let Some(cv) = &self.canvas {
-                  if let Err(e) = ps.black_step(mt, &cv) {
+                  if let Err(e) = ps.tool_func(mt, &cv) {
                     return Err(e);
                   }
 
@@ -1094,7 +1094,17 @@ impl Manager {
           }
         }
       }
-      TabType::TabBox => {}
+      TabType::TabBox => {
+        if let Some(bx) = &mut self.pbox {
+          if let Err(e) = bx.tool_func(mt) {
+            return Err(e);
+          }
+
+          if let Err(e) = self.draw() {
+            return Err(e);
+          }
+        }
+      }
       TabType::TabBoard => {}
     }
 

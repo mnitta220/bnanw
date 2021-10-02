@@ -49,6 +49,7 @@ pub struct Source {
   pub text: String,
   pub align: Align,
   pub tokens: Vec<token::Token>,
+  pub token2s: Vec<token::Token2>,
   //pub box_lines: Vec<BoxLine>,
 }
 
@@ -60,10 +61,12 @@ impl Source {
       text: String::from(text),
       align: Align::None,
       tokens: Vec::new(),
+      token2s: Vec::new(),
       //box_lines: Vec::new(),
     };
 
     s.tokenize();
+    s.analyze();
     //s.sprit_box_line();
 
     s
@@ -317,6 +320,157 @@ impl Source {
       self.tokens.push(token);
     }
   }
+
+  fn analyze(&mut self) {
+    //log!("***analyze");
+    let mut i: usize = 0;
+    let mut j: usize;
+    let mut ruby_s: usize;
+    let mut ruby_e: usize;
+    let mut ruby_len: i32;
+    let mut ruby_tokens: Vec<token::Token2>;
+    let mut t: token::Token2;
+    let mut seq = 0;
+
+    loop {
+      if i >= self.tokens.len() {
+        break;
+      }
+
+      ruby_s = i;
+      ruby_e = i;
+      ruby_len = 0;
+      ruby_tokens = Vec::new();
+
+      if (i + 1) < self.tokens.len() {
+        // ルビがあるか？
+        j = i + 1;
+
+        if self.tokens[j].ty == token::TokenType::RubyS {
+          ruby_s = j;
+          j += 1;
+
+          loop {
+            if j >= self.tokens.len() {
+              break;
+            }
+
+            match self.tokens[j].ty {
+              token::TokenType::RubyE => {
+                ruby_e = j;
+                break;
+              }
+
+              token::TokenType::Zenkaku
+              | token::TokenType::Zenkigo
+              | token::TokenType::Kana
+              | token::TokenType::Yousoku
+              | token::TokenType::Alpha
+              | token::TokenType::Hankigo
+              | token::TokenType::Kuten
+              | token::TokenType::Special => {
+                t = token::Token2 {
+                  seq: (seq + 1),
+                  ty: self.tokens[j].ty,
+                  word: self.tokens[j].word.to_owned(),
+                  ruby: None,
+                };
+
+                ruby_tokens.push(t);
+                seq += 1;
+                ruby_len += self.tokens[j].word.chars().count() as i32;
+
+                if ruby_len > 50 {
+                  break;
+                }
+              }
+
+              _ => {
+                break;
+              }
+            }
+
+            j += 1;
+          }
+        }
+      }
+
+      if ruby_e > (ruby_s + 1) {
+        // ルビあり
+        t = token::Token2 {
+          seq: (seq - ruby_tokens.len() as isize),
+          ty: self.tokens[i].ty,
+          word: self.tokens[i].word.to_owned(),
+          ruby: Some(ruby_tokens),
+        };
+
+        self.token2s.push(t);
+        seq += 1;
+        i = ruby_e + 1;
+      } else {
+        // ルビなし
+        match self.tokens[i].ty {
+          token::TokenType::Zenkaku
+          | token::TokenType::Zenkigo
+          | token::TokenType::Kana
+          | token::TokenType::Yousoku
+          | token::TokenType::Kuten
+          | token::TokenType::Space
+          | token::TokenType::Special => {
+            for c in self.tokens[i].word.chars() {
+              if c == ' ' {
+                t = token::Token2 {
+                  seq: seq,
+                  ty: self.tokens[i].ty,
+                  word: c.to_string(),
+                  ruby: None,
+                };
+              } else {
+                t = token::Token2 {
+                  seq: seq,
+                  ty: self.tokens[i].ty,
+                  word: c.to_string(),
+                  ruby: None,
+                };
+              }
+
+              self.token2s.push(t);
+              seq += 1;
+            }
+          }
+
+          token::TokenType::Alpha | token::TokenType::Hankigo => {
+            t = token::Token2 {
+              seq: seq,
+              ty: self.tokens[i].ty,
+              word: self.tokens[i].word.to_owned(),
+              ruby: None,
+            };
+
+            self.token2s.push(t);
+            seq += 1;
+          }
+
+          token::TokenType::Slash => {
+            t = token::Token2 {
+              seq: seq,
+              ty: token::TokenType::Slash,
+              word: String::from("/"),
+              ruby: None,
+            };
+
+            self.token2s.push(t);
+            seq += 1;
+          }
+
+          _ => {}
+        }
+
+        i += 1;
+      }
+    }
+  }
+
   /*
     pub fn sprit_box_line(&mut self) {
       self.box_lines.clear();
