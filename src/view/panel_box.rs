@@ -5,33 +5,60 @@ use super::area;
 use super::canvas;
 use wasm_bindgen::prelude::*;
 
+#[derive(PartialOrd, PartialEq, Debug, Copy, Clone)]
+pub enum ContentType {
+  Content,
+  Section,
+  Text,
+}
+
 pub struct Content {
+  pub ty: ContentType,
   pub seq: isize,
-  pub ty: isize,
+  pub lbl: isize,
   pub is_dummy: bool,
   pub is_cur: bool,
   pub page: isize,
-  pub index: isize,
   pub label: Option<String>,
   pub token2s: Vec<token::Token2>,
   pub children: Vec<Content>,
 }
 
 impl Content {
-  pub fn new(seq: isize, ty: isize, is_dummy: bool) -> Self {
+  pub fn new(ty: ContentType, seq: isize, lbl: isize, is_dummy: bool) -> Self {
     let c = Content {
-      seq,
       ty,
+      seq,
+      lbl,
       is_dummy,
       is_cur: false,
       page: 0,
-      index: 0,
       label: None,
       token2s: Vec::new(),
       children: Vec::new(),
     };
 
     c
+  }
+
+  pub fn get_cur_sec(&self) -> Option<&Content> {
+    for c in &self.children {
+      match c.ty {
+        ContentType::Content => {
+          if c.is_cur {
+            return c.get_cur_sec();
+          }
+        }
+        ContentType::Section => {
+          if c.is_cur {
+            return Some(c);
+          }
+        }
+        ContentType::Text => {}
+      }
+    }
+
+    None
   }
 }
 
@@ -45,6 +72,7 @@ pub struct PanelBox {
   pub fontw2: f64,
   pub fontwh: f64,
   pub tree: Option<Content>,
+  pub pages: Vec<usize>,
   pub areas: Vec<area::Area>,
 }
 
@@ -60,8 +88,17 @@ impl PanelBox {
       fontw2: 0.0,
       fontwh: 0.0,
       tree: None,
+      pages: Vec::new(),
       areas: Vec::new(),
     };
+
+    pb.pages.push(0);
+    pb.pages.push(0);
+    pb.pages.push(0);
+    pb.pages.push(0);
+    pb.pages.push(0);
+    pb.pages.push(0);
+    pb.pages.push(0);
 
     let (_, root) = pb.build_sub(mgr, 0, 0, 0, false, true);
     pb.tree = Some(root);
@@ -92,11 +129,16 @@ impl PanelBox {
       mgr.section
     );
 
-    let mut con = Content::new(idx as isize, lvl, is_dummy);
+    let mut con = Content::new(ContentType::Content, idx as isize, lvl, is_dummy);
     let lv = lvl + 1;
     let mut i = idx;
+    //let mut is_con = true;
 
-    if seq == mgr.section {
+    if mgr.section == -1 {
+      if seq == 0 {
+        con.is_cur = true;
+      }
+    } else if seq == mgr.section {
       con.is_cur = true;
     }
 
@@ -108,37 +150,47 @@ impl PanelBox {
       let s = &mgr.sources[i];
 
       if s.ty == 0 {
-        if s.tokens.len() == 0 {
-          i += 1;
-          continue;
-        }
-
-        let mut c = Content::new(s.seq, s.ty, false);
-
-        for t in &s.token2s {
-          if c.label.is_none() {
-            match t.ty {
-              token::TokenType::Zenkaku | token::TokenType::Kana | token::TokenType::Alpha => {
-                for ch in t.word.chars() {
-                  let l = format!("{}", ch);
-                  c.label = Some(l.clone());
-                  if con.label.is_none() {
-                    con.label = Some(l);
-                  }
-                  break;
-                }
-              }
-              _ => {}
-            }
+        let mut section = Content::new(ContentType::Section, s.seq, lv, false);
+        //let mut j = i;
+        loop {
+          if i >= mgr.sources.len() {
+            break;
           }
-          c.token2s.push(t.clone());
+          let s2 = &mgr.sources[i];
+          if s2.ty != 0 {
+            break;
+          }
+          let mut c = Content::new(ContentType::Text, s2.seq, lv + 1, false);
+
+          for t in &s2.token2s {
+            if c.label.is_none() {
+              match t.ty {
+                token::TokenType::Zenkaku | token::TokenType::Kana | token::TokenType::Alpha => {
+                  for ch in t.word.chars() {
+                    let l = format!("{}", ch);
+                    c.label = Some(l.clone());
+                    if section.label.is_none() {
+                      section.label = Some(l);
+                    }
+                    break;
+                  }
+                }
+                _ => {}
+              }
+            }
+            c.token2s.push(t.clone());
+          }
+          section.children.push(c);
+          i += 1;
         }
 
-        if con.is_cur && con.children.len() == 0 {
-          c.is_cur = true;
+        if con.label.is_none() && section.label.is_some() {
+          con.label = Some(section.label.clone().unwrap());
         }
-        con.children.push(c);
-        i += 1;
+        if con.is_cur && con.children.len() == 0 {
+          section.is_cur = true;
+        }
+        con.children.push(section);
         continue;
       }
 
@@ -146,6 +198,7 @@ impl PanelBox {
         break;
       }
 
+      //is_con = true;
       let dm: bool;
       if s.ty == lv {
         i += 1;
@@ -220,12 +273,9 @@ impl PanelBox {
   }
 
   fn draw_sub(&self, cv: &canvas::Canvas, con: &Content, lvl: isize, is_dark: bool) {
-    let mut is_con = false;
-    let mut is_sec = false;
     let mut i = 0;
     let mut j = 0;
-    let mut k = 0;
-    let mut l = 0;
+    let mut pg = 0;
 
     loop {
       if i >= con.children.len() {
@@ -234,75 +284,17 @@ impl PanelBox {
 
       let c = &con.children[i];
 
-      if c.ty > 0 {
-        j += 1;
-        if j > 8 {
-          j = 0;
-          k = i;
-        }
-
-        is_con = true;
-        is_sec = false;
-
-        if c.is_cur {
-          l = k;
-        }
-      } else {
-        if is_sec == false {
-          j += 1;
-          if j > 8 {
-            j = 0;
-            k = i;
-          }
-        }
-        is_sec = true;
-      }
-
-      i += 1;
-    }
-
-    if is_con {
-      i = l;
-      j = 0;
-      is_sec = false;
-
-      loop {
-        if i >= con.children.len() || j > 8 {
-          break;
-        }
-
-        let c = &con.children[i];
-
-        if c.ty > 0 {
-          is_sec = false;
-          if c.label.is_some() {
-            log!(
-              "***PanelBox.draw_sub(con): lvl={} label={} is_cur={}",
-              lvl,
-              c.label.clone().unwrap(),
-              c.is_cur
-            );
-            self.draw_label(
-              lvl,
-              cv,
-              is_dark,
-              j,
-              c.label.clone().unwrap().as_ref(),
-              c.is_cur,
-            );
-          }
-          j += 1;
-          if c.is_cur {
-            self.draw_sub(cv, c, lvl + 1, is_dark);
-          }
-        } else {
-          if is_sec == false {
+      match c.ty {
+        ContentType::Content => {
+          if con.page == pg {
             if c.label.is_some() {
               log!(
-                "***PanelBox.draw_sub(sec): lvl={} label={} is_cur={}",
+                "***PanelBox.draw_sub(con): lvl={} label={} is_cur={} pg={} j={}",
                 lvl,
                 c.label.clone().unwrap(),
-                c.is_cur
+                c.is_cur,
+                pg,
+                j
               );
               self.draw_label(
                 lvl,
@@ -312,20 +304,48 @@ impl PanelBox {
                 c.label.clone().unwrap().as_ref(),
                 c.is_cur,
               );
-
-              if c.is_cur {
-                self.draw_text(cv, con, lvl + 1, is_dark, 0);
-              }
             }
-            j += 1;
+            if c.is_cur {
+              self.draw_sub(cv, c, lvl + 1, is_dark);
+            }
           }
-          is_sec = true;
         }
-
-        i += 1;
+        ContentType::Section => {
+          if con.page == pg {
+            if c.label.is_some() {
+              log!(
+                "***PanelBox.draw_sub(sec): lvl={} label={} is_cur={} pg={} j={}",
+                lvl,
+                c.label.clone().unwrap(),
+                c.is_cur,
+                pg,
+                j
+              );
+              self.draw_label(
+                lvl,
+                cv,
+                is_dark,
+                j,
+                c.label.clone().unwrap().as_ref(),
+                c.is_cur,
+              );
+            }
+            if c.is_cur {
+              self.draw_section(cv, c, lvl + 1, is_dark);
+            }
+          }
+        }
+        ContentType::Text => {
+          //
+        }
       }
-    } else {
-      self.draw_text(cv, con, lvl, is_dark, 0);
+
+      i += 1;
+      j += 1;
+      if j > 8 {
+        pg += 1;
+        j = 0;
+      }
     }
 
     self.draw_frame(lvl, cv, is_dark);
@@ -333,7 +353,7 @@ impl PanelBox {
 
   fn draw_frame(&self, ty: isize, cv: &canvas::Canvas, is_dark: bool) {
     //log!("***PanelBox.draw_frame: ty={}", ty);
-    let (x1, x3, x5, y1, y2, y3) = self.pos_xy(ty, cv);
+    let (x1, x3, x5, y1, y2, y3, _) = self.pos_xy(ty, cv);
     let w3 = self.fontw2 * 3.0;
 
     if is_dark {
@@ -366,7 +386,7 @@ impl PanelBox {
   ) {
     let font = format!("{}pt Arial", self.font_size);
     cv.context.set_font(font.as_ref());
-    let (x1, x3, x5, y1, y2, y3) = self.pos_xy(ty, cv);
+    let (x1, x3, x5, y1, y2, y3, _) = self.pos_xy(ty, cv);
     let (x, y) = self.idx_to_xy(index, x1, x3, x5, y1, y2, y3);
 
     if is_cur {
@@ -390,12 +410,11 @@ impl PanelBox {
       .unwrap();
   }
 
-  fn draw_text(&self, cv: &canvas::Canvas, con: &Content, ty: isize, is_dark: bool, index: isize) {
+  fn draw_section(&self, cv: &canvas::Canvas, con: &Content, ty: isize, is_dark: bool) {
+    log!("***PanelBox.draw_section: ty={}", ty);
     let font = format!("{}pt Serif", self.font_size);
     cv.context.set_font(font.as_ref());
-    let (x1, x3, x5, y1, y2, y3) = self.pos_xy(ty, cv);
-    let mut found = false;
-    let mut i = 0;
+    let (x1, x3, x5, y1, y2, y3, y4) = self.pos_xy(ty, cv);
 
     if is_dark {
       cv.context.set_fill_style(&JsValue::from_str("#ffffff"));
@@ -405,76 +424,115 @@ impl PanelBox {
     cv.context.set_text_align("center");
     cv.context.set_text_baseline("middle");
 
-    for c in &con.children {
-      if c.is_cur {
-        found = true;
-      }
-      if found && c.ty != 0 {
-        break;
-      }
+    let mut i = 0;
+    let mut l = 0;
+    let mut pg = 0;
 
+    for c in &con.children {
       for t in &c.token2s {
         match t.ty {
           token::TokenType::Zenkaku
           | token::TokenType::Kana
-          | token::TokenType::Kuten
           | token::TokenType::Yousoku
+          | token::TokenType::Zenkigo
           | token::TokenType::Special => {
-            for c in t.word.chars() {
-              let (mut x, mut y) = self.idx_to_xy(i, x1, x3, x5, y1, y2, y3);
-
-              if t.ty == token::TokenType::Kuten {
-                x += cv.met * 0.6;
-                y += cv.met * 0.4;
+            for ch in t.word.chars() {
+              if i > 2 {
+                i = 0;
+                l += 1;
+                if l > 2 {
+                  l = 0;
+                  pg += 1;
+                }
               }
 
-              cv.context
-                .fill_text(&c.to_string(), x + self.fontwh, y + self.fontwh)
-                .unwrap();
+              if con.page == pg {
+                let (x, y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
+
+                if t.ty == token::TokenType::Zenkigo {
+                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                  cv.context
+                    .fill_text(
+                      &ch.to_string(),
+                      y + 3.0 + self.fontwh,
+                      -x - self.fontwh - 2.0,
+                    )
+                    .unwrap();
+                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                } else {
+                  cv.context
+                    .fill_text(&ch.to_string(), x + self.fontwh, y + self.fontwh)
+                    .unwrap();
+                }
+              }
 
               i += 1;
-              if i > 8 {
-                break;
-              }
             }
           }
-          token::TokenType::Zenkigo => {
-            for c in t.word.chars() {
-              let (x, y) = self.idx_to_xy(i, x1, x3, x5, y1, y2, y3);
+          token::TokenType::Kuten => {
+            for ch in t.word.chars() {
+              if i > 3 {
+                i = 0;
+                l += 1;
+                if l > 2 {
+                  l = 0;
+                  pg += 1;
+                }
+              }
 
-              cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-              cv.context
-                .fill_text(
-                  &c.to_string(),
-                  y + 3.0 + self.fontwh,
-                  -x - self.fontwh - 2.0,
-                )
-                .unwrap();
-              cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+              if con.page == pg {
+                let (mut x, mut y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
+
+                x += cv.met * 0.9;
+                y -= cv.met * 0.9;
+
+                cv.context
+                  .fill_text(&ch.to_string(), x + self.fontwh, y + self.fontwh)
+                  .unwrap();
+              }
 
               i += 1;
-              if i > 8 {
-                break;
-              }
+            }
+          }
+          token::TokenType::Alpha | token::TokenType::Hankigo => {
+            i = 0;
+            l += 1;
+            if l > 2 {
+              l = 0;
+              pg += 1;
+            }
+            if con.page == pg {
+              let (x, y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
+              cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+              cv.context
+                .fill_text(&t.word, y + 3.0 + self.fontwh, -x - self.fontwh - 2.0)
+                .unwrap();
+              cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+            }
+            l += 1;
+            if l > 2 {
+              l = 0;
+              pg += 1;
             }
           }
           _ => {}
         }
-
-        if i > 8 {
-          break;
-        }
       }
 
-      if i > 8 {
-        break;
+      if i > 0 {
+        i = 0;
+        l += 1;
+        if l > 2 {
+          l = 0;
+          pg += 1;
+        }
       }
     }
 
     self.draw_frame(ty, cv, is_dark);
   }
 
-  fn pos_xy(&self, ty: isize, cv: &canvas::Canvas) -> (f64, f64, f64, f64, f64, f64) {
+  fn pos_xy(&self, ty: isize, cv: &canvas::Canvas) -> (f64, f64, f64, f64, f64, f64, f64) {
     let top = self.fontw1 / 2.0 + (self.fontw2 * 4.0 * (ty - 1) as f64);
     let pad = self.fontw1 * 0.1;
     let x3 = cv.width / 2.0 - self.fontw2 / 2.0;
@@ -485,8 +543,9 @@ impl PanelBox {
     let y1 = top;
     let y2 = y1 + self.fontw2;
     let y3 = y2 + self.fontw2;
+    let y4 = y3 + self.fontw2;
 
-    (x1, x3, x5, y1, y2, y3)
+    (x1, x3, x5, y1, y2, y3, y4)
   }
 
   fn idx_to_xy(
@@ -512,6 +571,40 @@ impl PanelBox {
     }
   }
 
+  fn li_to_xy(
+    &self,
+    l: isize,
+    i: isize,
+    x1: f64,
+    x3: f64,
+    x5: f64,
+    y1: f64,
+    y2: f64,
+    y3: f64,
+    y4: f64,
+  ) -> (f64, f64) {
+    match l {
+      0 => match i {
+        0 => (x5, y1),
+        1 => (x5, y2),
+        2 => (x5, y3),
+        _ => (x5, y4),
+      },
+      1 => match i {
+        0 => (x3, y1),
+        1 => (x3, y2),
+        2 => (x3, y3),
+        _ => (x3, y4),
+      },
+      _ => match i {
+        0 => (x1, y1),
+        1 => (x1, y2),
+        2 => (x1, y3),
+        _ => (x1, y4),
+      },
+    }
+  }
+
   pub fn tool_func(&mut self, mt: FuncType) -> Result<isize, &'static str> {
     match mt {
       // 1区切り進む
@@ -525,38 +618,61 @@ impl PanelBox {
   }
 
   fn scroll(&mut self, mt: FuncType) {
+    if let Some(tr) = &mut self.tree {
+      //let mut cur1 = false;
+      tr.page = 1;
+      if let Some(sec) = &mut tr.get_cur_sec() {
+        //sec.page = 1;
+      }
+      /*
+      for c1 in &tr.children {
+        match c1.ty {
+          ContentType::Content => {
+            //
+          }
+          ContentType::Section => {
+            //
+          }
+          ContentType::Text => {}
+        }
+      }
+      */
+    }
+  }
+
+  fn scroll_old(&mut self, mt: FuncType) {
     if let Some(tr) = &self.tree {
       let mut cur1 = false;
       for c1 in &tr.children {
-        if c1.ty == 0 {
+        if c1.lbl == 0 {
           continue;
         }
         if c1.is_cur {
           cur1 = true;
           let mut cur2 = false;
           for c2 in &c1.children {
-            if c2.ty == 0 {
+            if c2.lbl == 0 {
               continue;
             }
             if c2.is_cur {
               cur2 = true;
               let mut cur3 = false;
               for c3 in &c2.children {
-                if c3.ty == 0 {
+                if c3.lbl == 0 {
                   continue;
                 }
                 if c3.is_cur {
                   cur3 = true;
                   let mut cur4 = false;
                   for c4 in &c3.children {
-                    if c4.ty == 0 {
+                    if c4.lbl == 0 {
                       continue;
                     }
                     if c4.is_cur {
                       cur4 = true;
                       let mut cur5 = false;
                       for c5 in &c1.children {
-                        if c5.ty == 0 {
+                        if c5.lbl == 0 {
                           continue;
                         }
                         if c5.is_cur {
