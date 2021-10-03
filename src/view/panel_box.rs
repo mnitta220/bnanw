@@ -18,7 +18,7 @@ pub struct Content {
   pub lbl: isize,
   pub is_dummy: bool,
   pub is_cur: bool,
-  pub page: isize,
+  //pub page: isize,
   pub label: Option<String>,
   pub token2s: Vec<token::Token2>,
   pub children: Vec<Content>,
@@ -32,7 +32,7 @@ impl Content {
       lbl,
       is_dummy,
       is_cur: false,
-      page: 0,
+      //page: 0,
       label: None,
       token2s: Vec::new(),
       children: Vec::new(),
@@ -72,7 +72,8 @@ pub struct PanelBox {
   pub fontw2: f64,
   pub fontwh: f64,
   pub tree: Option<Content>,
-  pub pages: Vec<usize>,
+  pub sec_page: isize,
+  pub con_pages: Vec<usize>,
   pub areas: Vec<area::Area>,
 }
 
@@ -88,17 +89,18 @@ impl PanelBox {
       fontw2: 0.0,
       fontwh: 0.0,
       tree: None,
-      pages: Vec::new(),
+      sec_page: 0,
+      con_pages: Vec::new(),
       areas: Vec::new(),
     };
 
-    pb.pages.push(0);
-    pb.pages.push(0);
-    pb.pages.push(0);
-    pb.pages.push(0);
-    pb.pages.push(0);
-    pb.pages.push(0);
-    pb.pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
+    pb.con_pages.push(0);
 
     let (_, root) = pb.build_sub(mgr, 0, 0, 0, false, true);
     pb.tree = Some(root);
@@ -251,7 +253,7 @@ impl PanelBox {
       self.draw_sub(cv, tr, 1, is_dark);
     }
 
-    cv.context.set_line_width(3.0);
+    //cv.context.set_line_width(3.0);
     if is_dark {
       cv.context.set_stroke_style(&JsValue::from_str("#ffffff"));
     } else {
@@ -286,7 +288,7 @@ impl PanelBox {
 
       match c.ty {
         ContentType::Content => {
-          if con.page == pg {
+          if self.con_pages[lvl as usize] == pg {
             if c.label.is_some() {
               log!(
                 "***PanelBox.draw_sub(con): lvl={} label={} is_cur={} pg={} j={}",
@@ -311,7 +313,7 @@ impl PanelBox {
           }
         }
         ContentType::Section => {
-          if con.page == pg {
+          if self.con_pages[lvl as usize] == pg {
             if c.label.is_some() {
               log!(
                 "***PanelBox.draw_sub(sec): lvl={} label={} is_cur={} pg={} j={}",
@@ -335,9 +337,7 @@ impl PanelBox {
             }
           }
         }
-        ContentType::Text => {
-          //
-        }
+        ContentType::Text => {}
       }
 
       i += 1;
@@ -364,6 +364,7 @@ impl PanelBox {
       cv.context.set_fill_style(&JsValue::from_str("#999999"));
     }
 
+    cv.context.set_line_width(1.0);
     cv.context.stroke_rect(x1, y1, self.fontw2, w3);
     cv.context.stroke_rect(x3, y1, self.fontw2, w3);
     cv.context.stroke_rect(x5, y1, self.fontw2, w3);
@@ -446,7 +447,7 @@ impl PanelBox {
                 }
               }
 
-              if con.page == pg {
+              if self.sec_page == pg {
                 let (x, y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
 
                 if t.ty == token::TokenType::Zenkigo {
@@ -480,7 +481,7 @@ impl PanelBox {
                 }
               }
 
-              if con.page == pg {
+              if self.sec_page == pg {
                 let (mut x, mut y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
 
                 x += cv.met * 0.9;
@@ -501,7 +502,7 @@ impl PanelBox {
               l = 0;
               pg += 1;
             }
-            if con.page == pg {
+            if self.sec_page == pg {
               let (x, y) = self.li_to_xy(l, i, x1, x3, x5, y1, y2, y3, y4);
               cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
               cv.context
@@ -618,26 +619,16 @@ impl PanelBox {
   }
 
   fn scroll(&mut self, mt: FuncType) {
+    self.sec_page += 1;
+    /*
     if let Some(tr) = &mut self.tree {
       //let mut cur1 = false;
-      tr.page = 1;
+      //tr.page = 1;
       if let Some(sec) = &mut tr.get_cur_sec() {
         //sec.page = 1;
       }
-      /*
-      for c1 in &tr.children {
-        match c1.ty {
-          ContentType::Content => {
-            //
-          }
-          ContentType::Section => {
-            //
-          }
-          ContentType::Text => {}
-        }
-      }
-      */
     }
+    */
   }
 
   fn scroll_old(&mut self, mt: FuncType) {
