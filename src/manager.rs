@@ -1,5 +1,5 @@
 //use super::model::boxs;
-//use super::model::contents;
+use super::model::contents;
 use super::model::source;
 //use super::model::token;
 use super::util;
@@ -25,7 +25,7 @@ pub struct Manager {
   pub psec: Option<view::panel_section::PanelSection>,
   pub pbox: Option<view::panel_box::PanelBox>,
   pub pbd: Option<view::panel_board::PanelBoard>,
-  //pub tree: Option<super::model::contents::ContentsTree>,
+  pub tree: Option<super::model::contents::ContentTree>,
   pub canvas: Option<view::canvas::Canvas>,
   pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
@@ -48,7 +48,7 @@ impl Manager {
       psec: None,
       pbox: None,
       pbd: None,
-      //tree: None,
+      tree: None,
       canvas: None,
       click_handle: Vec::new(),
       font_loaded: false,
@@ -111,32 +111,12 @@ impl Manager {
   /// 文書ツリーを生成する
   pub fn build_tree(&mut self) -> Result<isize, &'static str> {
     log!("***Manager.build_tree");
-    //self.tree = Some(super::model::contents::ContentsTree::new(&self));
+    self.tree = Some(super::model::contents::ContentTree::build(&self));
     self.pbox = Some(view::panel_box::PanelBox::new(&self));
     //a
     Ok(0)
   }
 
-  /*
-    /// Boxツリーを生成する
-    pub fn build_box(&mut self) -> Result<isize, &'static str> {
-      log!("***Manager.build_box");
-      //let mut b9: boxs::Box9;
-      let root = boxs::Box9::new();
-      //let mut bl: boxs::BoxLine;
-
-      let mut b9 = boxs::Box9::new();
-      let mut pos: isize = 0;
-      //let mut bl = boxs::BoxLine::new();
-      //b9.lines.push(bl);
-
-      for s in &self.sources {
-        //s.sprit_box_line();
-      }
-
-      Ok(0)
-    }
-  */
   /// 文書を表示する
   pub fn draw_doc(
     &mut self,
@@ -392,17 +372,19 @@ impl Manager {
       TabType::TabBox => {
         //log!("***Manager.draw TabBox");
         if let Some(bx) = &mut self.pbox {
-          if let Some(cv) = &self.canvas {
-            let mut areas: Vec<view::area::Area> = Vec::new();
+          if let Some(tr) = &mut self.tree {
+            if let Some(cv) = &self.canvas {
+              let mut areas: Vec<view::area::Area> = Vec::new();
 
-            if let Err(e) = bx.draw(&cv, &mut areas, self.is_black, self.is_dark, 30) {
-              return Err(e);
+              if let Err(e) = bx.draw(tr, &cv, &mut areas, self.is_black, self.is_dark, 32) {
+                return Err(e);
+              }
+
+              bx.areas.clear();
+              bx.areas = areas;
+            } else {
+              return Err("ERR_GET_CANVAS");
             }
-
-            bx.areas.clear();
-            bx.areas = areas;
-          } else {
-            return Err("ERR_GET_CANVAS");
           }
         }
       }
