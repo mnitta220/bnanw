@@ -110,7 +110,7 @@ impl Manager {
 
   /// 文書ツリーを生成する
   pub fn build_tree(&mut self) -> Result<isize, &'static str> {
-    log!("***Manager.build_tree");
+    //log!("***Manager.build_tree");
     self.tree = Some(super::model::contents::ContentTree::build(&self));
     self.pbox = Some(view::panel_box::PanelBox::new(&self));
     //a
@@ -425,7 +425,16 @@ impl Manager {
           }
         }
       }
-      TabType::TabBox => {}
+      TabType::TabBox => {
+        if let Some(bx) = &mut self.pbox {
+          let handle = super::click_handle();
+          self.click_handle.push(handle);
+
+          if let Err(e) = bx.touch_start(x, y) {
+            return Err(e);
+          }
+        }
+      }
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_start(x, y) {
@@ -475,7 +484,23 @@ impl Manager {
           }
         }
       }
-      TabType::TabBox => {}
+      TabType::TabBox => {
+        if let Some(bx) = &mut self.pbox {
+          match bx.touch_move(x, y) {
+            Ok(r) => {
+              if r == 0 {
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_move(x, y) {
@@ -540,7 +565,21 @@ impl Manager {
           }
         }
       }
-      TabType::TabBox => {}
+      TabType::TabBox => {
+        if let Some(bx) = &mut self.pbox {
+          match bx.touch_end() {
+            Ok(r) => {
+              if self.is_black && r == -2 {
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+            }
+
+            Err(e) => return Err(e),
+          }
+        }
+      }
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_end() {
@@ -582,7 +621,23 @@ impl Manager {
           }
         }
       }
-      TabType::TabBox => {}
+      TabType::TabBox => {
+        if let Some(bx) = &mut self.pbox {
+          match bx.click() {
+            Ok(r) => {
+              if r == 1 {
+                if let Err(e) = self.tool_func(FuncType::FdSlash) {
+                  return Err(e);
+                }
+              }
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
       TabType::TabBoard => {}
     }
 

@@ -11,6 +11,12 @@ pub struct PanelBox {
   pub width: f64,
   pub height: f64,
   pub touching: bool,
+  pub start_x: i32,
+  pub start_y: i32,
+  pub cur_x: i32,
+  pub cur_y: i32,
+  pub start_time: f64,
+  pub touch1: f64,
   pub font_size: isize,
   pub fontw1: f64,
   pub fontw2: f64,
@@ -26,6 +32,12 @@ impl PanelBox {
       width: 0.0,
       height: 0.0,
       touching: false,
+      start_x: 0,
+      start_y: 0,
+      cur_x: 0,
+      cur_y: 0,
+      start_time: 0.0,
+      touch1: 0.0,
       font_size: 30,
       fontw1: 0.0,
       fontw2: 0.0,
@@ -95,16 +107,17 @@ impl PanelBox {
     let mut j = 0;
     let mut pg = 0;
     let mut has_con = false;
-    let mut has_cur = false;
+    //let mut has_cur = false;
 
     for c in &con.children {
       if c.ty == contents::ContentType::Content {
         has_con = true;
       }
-      if c.is_cur {
-        has_cur = true;
-      }
+      //if c.is_cur {
+      //  has_cur = true;
+      //}
     }
+    /*
     if (con.ty == contents::ContentType::Content || con.ty == contents::ContentType::Section)
       && has_cur == false
     {
@@ -113,6 +126,7 @@ impl PanelBox {
         break;
       }
     }
+    */
 
     loop {
       if i >= con.children.len() {
@@ -263,12 +277,14 @@ impl PanelBox {
     ty: isize,
     is_dark: bool,
   ) {
+    /*
     log!(
       "***PanelBox.draw_section: ty={} self.sec_page={} len={}",
       ty,
       self.sec_page,
       &con.children.len()
     );
+    */
     let font = format!("{}pt Serif", self.font_size);
     cv.context.set_font(font.as_ref());
     let (x1, x3, x5, y1, y2, y3, y4) = self.pos_xy(ty, cv);
@@ -488,19 +504,19 @@ impl PanelBox {
   pub fn touch_start(&mut self, x: i32, y: i32) -> Result<(), &'static str> {
     //log!("***PanelBoard.touch_start: x={} y={}", x, y);
     self.touching = true;
-    /*
-    let point = stroke::Point::new(x, y);
-    let mut stroke = stroke::Stroke::new();
-    stroke.points.push(point);
-    self.strokes.push(stroke);
-    */
+    self.start_time = js_sys::Date::now();
+    self.start_x = x;
+    self.start_y = y;
+    self.cur_x = x;
+    self.cur_y = y;
 
     Ok(())
   }
 
   /// タッチを移動する
   pub fn touch_move(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    Ok(0)
+    let ret: isize = -1;
+    Ok(ret)
   }
 
   /// タッチ終了
@@ -514,7 +530,75 @@ impl PanelBox {
   ///
   pub fn touch_end(&mut self) -> Result<isize, &'static str> {
     //log!("***PanelBoard.touch_end");
+    //self.touching = false;
+    let mut ret: isize = -3;
+    //let mut is_sb: bool = false;
+
+    if self.touching {
+      //self.pos += diff3 as f64;
+      let now = js_sys::Date::now();
+      let diff1 = now - self.start_time;
+
+      if diff1 < 500.0 {
+        let diff2 = now - self.touch1;
+
+        if diff2 < 800.0 {
+          // double click
+          if let Err(e) = self.dbl_click() {
+            return Err(e);
+          }
+
+          ret = -2;
+          self.touch1 = 0.0;
+        }
+      }
+
+      if ret == -3 {
+        self.touch1 = now;
+      }
+    }
+
+    //if diff3 > 10 {
+    //  self.touch1 = 0.0;
+    //}
+
     self.touching = false;
+    Ok(ret)
+  }
+
+  /// クリック
+  pub fn click(&mut self) -> Result<isize, &'static str> {
+    let mut ret: isize = 0;
+    let now = js_sys::Date::now();
+    let diff_t = now - self.touch1;
+    self.touch1 = 0.0;
+    let diff_x = (self.cur_x - self.start_x).abs();
+    let diff_y = (self.cur_y - self.start_y).abs();
+    /*
+    log!(
+      "***PanelBox.click: diff_t={} diff_x={} diff_y={}",
+      diff_t,
+      diff_x,
+      diff_y
+    );
+    */
+    if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
+      ret = 1;
+    }
+
+    Ok(ret)
+  }
+
+  /// ダブルクリック
+  fn dbl_click(&mut self) -> Result<isize, &'static str> {
+    //log!("***PanelSection.dbl_click");
+    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
+
+    if source >= 0 {
+      //self.black_source = source;
+      //dself.black_token = token;
+    }
+
     Ok(0)
   }
 }

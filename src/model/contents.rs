@@ -49,7 +49,9 @@ impl ContentTree {
       token2s: Vec::new(),
       children: Vec::new(),
     };
-    let (_, root) = c.build_sub(mgr, 0, 0, 0, false, true);
+
+    let (_, mut root) = c.build_sub(mgr, 0, 0, 0, false, true);
+    c.set_cur(&mut root);
 
     root
   }
@@ -172,6 +174,36 @@ impl ContentTree {
     }
 
     (i, con)
+  }
+
+  fn set_cur(&mut self, con: &mut ContentTree) {
+    let mut has_cur = false;
+    for c in &mut con.children {
+      if c.is_cur {
+        has_cur = true;
+        if c.ty == ContentType::Content {
+          self.set_cur(c);
+        }
+        break;
+      }
+    }
+
+    if has_cur == false {
+      for c in &mut con.children {
+        match c.ty {
+          ContentType::Content => {
+            c.is_cur = true;
+            self.set_cur(c);
+            break;
+          }
+          ContentType::Section => {
+            c.is_cur = true;
+            break;
+          }
+          _ => {}
+        }
+      }
+    }
   }
 
   pub fn get_cur_sec(&self) -> Option<&ContentTree> {

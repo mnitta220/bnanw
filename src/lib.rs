@@ -250,7 +250,7 @@ pub fn set_source(seq: isize, text: &str) -> Result<(), JsValue> {
 ///
 #[wasm_bindgen]
 pub fn build_tree() -> Result<(), JsValue> {
-  log!("***build_tree");
+  //log!("***build_tree");
   if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().build_tree() {
     Err(e) => {
       return Err(JsValue::from_str(&format!("build_tree failed!: {}", e)));
