@@ -1,6 +1,6 @@
 [package]
 name = "bnanw"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Masahiro Nitta <mnitta220@gmail.com>"]
 edition = "2018"
 description = "文章暗記 WebAssembly プロジェクト"
@@ -11,12 +11,12 @@ license = "MIT"
 crate-type = ["cdylib"]
 
 [dependencies]
-js-sys = "0.3.45"
-wasm-bindgen = "0.2.68"
-wasm-bindgen-futures = "0.4.18"
+js-sys = "0.3.55"
+wasm-bindgen = "0.2.78"
+wasm-bindgen-futures = "0.4.28"
 
 [dependencies.web-sys]
-version = "0.3.45"
+version = "0.3.55"
 features = [
 	'Attr',
 	'console',

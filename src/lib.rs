@@ -98,7 +98,7 @@ pub fn main() -> Result<(), JsValue> {
 ///
 #[wasm_bindgen]
 pub fn ping(input: isize) -> Result<isize, JsValue> {
-  //log!("***ping");
+  log!("***ping: input={}", input);
   Ok(MANAGER.with(|mg| mg.borrow().ping(input)))
 }
 
@@ -375,6 +375,20 @@ pub fn tab_change(tab: i32, width: i32, height: i32, is_dark: bool) -> Result<is
   }
 
   Ok(ret)
+}
+
+/// 現在のセクションを返す
+///
+/// # 引数
+/// なし
+///
+/// # 戻り値
+/// セクション
+///
+#[wasm_bindgen]
+pub fn get_section() -> isize {
+  //log!("***get_section");
+  MANAGER.with(|mg| mg.borrow_mut().get_section())
 }
 
 /// タッチ開始

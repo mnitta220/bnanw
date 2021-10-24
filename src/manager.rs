@@ -1,5 +1,5 @@
 //use super::model::boxs;
-use super::model::contents;
+//use super::model::contents;
 use super::model::source;
 //use super::model::token;
 use super::util;
@@ -329,6 +329,12 @@ impl Manager {
     }
 
     Ok(0)
+  }
+
+  /// 現在のセクションを返す
+  pub fn get_section(&mut self) -> isize {
+    //log!("***Manager.get_section");
+    self.section
   }
 
   /// 文書を表示する。
