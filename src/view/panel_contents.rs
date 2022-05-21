@@ -1,4 +1,5 @@
 use super::super::manager;
+use super::super::FuncType;
 use super::area;
 use super::canvas;
 use super::panel;
@@ -20,6 +21,8 @@ pub struct PanelContents {
   pub height: f64,
   pub panel_width: f64,
   pub current: isize,
+  pub black_source: isize,
+  pub black_token: isize,
   pub scroll_bar: Option<scroll_bar::ScrollBar>,
   pub plines: Vec<panel_line::PanelLine>,
   pub areas: Vec<area::Area>,
@@ -43,6 +46,8 @@ impl panel::Panel for PanelContents {
       height: 0.0,
       panel_width: 0.0,
       current: manager::DOC_TOP,
+      black_source: 0,
+      black_token: 0,
       scroll_bar: None,
       plines: Vec::new(),
       areas: Vec::new(),
@@ -87,7 +92,7 @@ impl panel::Panel for PanelContents {
     is_black: bool,
     is_dark: bool,
   ) -> Result<isize, &'static str> {
-    //log!("***PanelContents.draw: current={}", self.current);
+    log!("***PanelContents.draw: current={}", self.current);
     cv.clear(is_dark);
 
     if let Some(sb) = &mut self.scroll_bar {
@@ -124,8 +129,8 @@ impl panel::Panel for PanelContents {
             self.font_size,
             cv,
             areas,
-            0,
-            0,
+            self.black_source,
+            self.black_token,
             true,
             is_black,
             is_gray,
@@ -172,8 +177,8 @@ impl panel::Panel for PanelContents {
             self.font_size,
             cv,
             areas,
-            0,
-            0,
+            self.black_source,
+            self.black_token,
             true,
             is_black,
             is_gray,
@@ -448,6 +453,27 @@ impl panel::Panel for PanelContents {
 }
 
 impl PanelContents {
+  /// 黒塗りを移動する
+  pub fn tool_func(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
+    /* */
+    log!(
+      "***tool_func start self.black_source={} self.black_token={}",
+      self.black_source,
+      self.black_token
+    );
+    /* */
+    let margin = cv.met + cv.ruby_w + cv.line_margin;
+
+    match mt {
+      // 1区切り進む
+      FuncType::FdSlash => {}
+
+      _ => {}
+    }
+
+    Ok(0)
+  }
+
   pub fn set_current(&mut self, cur: isize, cv: &canvas::Canvas) {
     self.current = cur;
     //let mut p: f64 = 0.0;

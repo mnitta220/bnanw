@@ -468,13 +468,14 @@ impl PanelLine {
   ) -> Result<f64, &'static str> {
     /*
     log!(
-      "***draw_line: source={} align={} pos={} black_line={} black_token={} is_contents={} is_gray={} is_current={}",
+      "***draw_line: source={} align={} pos={} black_line={} black_token={} is_contents={} is_black={} is_gray={} is_current={}",
       self.source,
       self.align,
       pos,
       black_line,
       black_token,
       is_contents,
+      is_black,
       is_gray,
       is_current
     );
@@ -616,11 +617,10 @@ impl PanelLine {
             }
 
             if is_first {
-              cv.context.fill_rect(x - 3.0, 0.0, bw, cv.height);
+              cv.context.fill_rect(x, 0.0, bw, cv.height);
               is_first = false;
             } else {
-              cv.context
-                .fill_rect(x - 3.0, 0.0, bw + cv.line_margin, cv.height);
+              cv.context.fill_rect(x, 0.0, bw + cv.line_margin, cv.height);
             }
 
             if is_dark {
@@ -663,11 +663,21 @@ impl PanelLine {
           for t in &l.ptokens {
             let mut black = false;
 
-            if is_black && is_contents == false && self.ty == 0 {
+            if is_black {
               if self.source > black_line || (self.source == black_line && t.seq >= black_token) {
                 black = true;
               }
             }
+            /*
+            log!(
+              "***black={} self.source={} black_line={} t.seq={} black_token={}",
+              black,
+              self.source,
+              black_line,
+              t.seq,
+              black_token
+            );
+            */
 
             match t.ty {
               token::TokenType::Zenkaku

@@ -658,6 +658,10 @@ impl Manager {
         self.is_black = black;
         self.draw()
       }
+      TabType::TabContents => {
+        self.is_black = black;
+        self.draw()
+      }
       _ => Ok(0),
     }
   }
@@ -924,7 +928,21 @@ impl Manager {
               }
             }
 
-            _ => {}
+            _ => {
+              if self.is_black {
+                if let Some(cv) = &self.canvas {
+                  if let Err(e) = pc.tool_func(mt, &cv) {
+                    return Err(e);
+                  }
+
+                  if let Err(e) = self.draw() {
+                    return Err(e);
+                  }
+                } else {
+                  return Err("ERR_GET_CANVAS");
+                }
+              }
+            }
           }
         }
       }

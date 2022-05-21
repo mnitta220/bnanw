@@ -499,7 +499,7 @@ pub fn touch_end() -> Result<isize, JsValue> {
 ///
 #[wasm_bindgen]
 pub fn mode_change(black: bool) -> Result<(), JsValue> {
-  //log!("***mode_change black={}", black);
+  log!("***mode_change black={}", black);
 
   if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().mode_change(black) {
     Err(e) => {
