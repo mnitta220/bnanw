@@ -58,8 +58,8 @@ impl PanelBox {
     &mut self,
     tree: &mut contents::ContentTree,
     cv: &canvas::Canvas,
-    areas: &mut Vec<area::Area>,
-    is_black: bool,
+    _areas: &mut Vec<area::Area>,
+    _is_black: bool,
     is_dark: bool,
     font_size: isize,
   ) -> Result<isize, &'static str> {
@@ -514,7 +514,7 @@ impl PanelBox {
   }
 
   /// タッチを移動する
-  pub fn touch_move(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+  pub fn touch_move(&mut self, _x: i32, _y: i32) -> Result<isize, &'static str> {
     let ret: isize = -1;
     Ok(ret)
   }
@@ -592,7 +592,7 @@ impl PanelBox {
   /// ダブルクリック
   fn dbl_click(&mut self) -> Result<isize, &'static str> {
     //log!("***PanelSection.dbl_click");
-    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
+    let (source, _token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
 
     if source >= 0 {
       //self.black_source = source;

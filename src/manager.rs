@@ -94,6 +94,21 @@ impl Manager {
     Ok(0)
   }
 
+  /// 段落をセットする
+  pub fn set_section(
+    &mut self,
+    current: isize,
+  ) -> Result<isize, &'static str> {
+    //log!("***Manager.set_doc: id={} current={}", id, current);
+    self.tab = TabType::TabText;
+    self.is_black = false;
+    self.section = current;
+    self.sources.clear();
+    self.contents.clear();
+
+    Ok(0)
+  }
+
   /// 文書の行をセットする
   pub fn set_source(&mut self, seq: isize, text: &str) -> Result<isize, &'static str> {
     //log!("***Manager.set_source: seq={}, text={}", seq, text);
@@ -532,7 +547,7 @@ impl Manager {
   /// - それ以外 : 異常終了
   ///
   pub fn touch_end(&mut self) -> Result<isize, &'static str> {
-    //log!("***Manager.touch_end");
+    log!("***Manager.touch_end");
     let mut ret: isize = -3;
 
     match self.tab {
@@ -540,11 +555,12 @@ impl Manager {
         if let Some(pc) = &mut self.pcon {
           match pc.touch_end() {
             Ok(i) => {
+              //log!("***Manager.touch_end i={}", i);
               if i > -2 {
                 // 目次選択
-                if let Err(e) = self.change_section(i) {
-                  return Err(e);
-                }
+                //if let Err(e) = self.change_section(i) {
+                //  return Err(e);
+                //}
 
                 ret = i;
               }
@@ -556,6 +572,7 @@ impl Manager {
           }
         }
       }
+
       TabType::TabText => {
         if let Some(ps) = &mut self.psec {
           match ps.touch_end() {
@@ -571,6 +588,7 @@ impl Manager {
           }
         }
       }
+
       TabType::TabBox => {
         if let Some(bx) = &mut self.pbox {
           match bx.touch_end() {
@@ -586,6 +604,7 @@ impl Manager {
           }
         }
       }
+
       TabType::TabBoard => {
         if let Some(bd) = &mut self.pbd {
           if let Err(e) = bd.touch_end() {
@@ -600,16 +619,27 @@ impl Manager {
 
   /// クリック
   pub fn click(&mut self) -> Result<isize, &'static str> {
-    //log!("***clicked!");
+    log!("***clicked!");
 
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
-          if let Err(e) = pc.click() {
-            return Err(e);
+          match pc.click() {
+            Ok(r) => {
+              if r == 1 {
+                if let Err(e) = self.tool_func(FuncType::FdSlash) {
+                  return Err(e);
+                }
+              }
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
           }
         }
       }
+
       TabType::TabText => {
         if let Some(ps) = &mut self.psec {
           match ps.click() {
@@ -627,6 +657,7 @@ impl Manager {
           }
         }
       }
+
       TabType::TabBox => {
         if let Some(bx) = &mut self.pbox {
           match bx.click() {
@@ -644,6 +675,7 @@ impl Manager {
           }
         }
       }
+
       TabType::TabBoard => {}
     }
 
@@ -736,7 +768,7 @@ impl Manager {
 
   /// ツールボタンの操作
   pub fn tool_func(&mut self, mt: FuncType) -> Result<isize, &'static str> {
-    //log!("***manager::tool_func");
+    /* log!("***manager::tool_func mt={}", mt); */
     match self.tab {
       TabType::TabText => {
         match mt {
@@ -895,57 +927,23 @@ impl Manager {
           }
         }
       }
+
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
-          match mt {
-            // 末尾に進む
-            FuncType::FdBottom => {
-              if self.is_vertical {
-                pc.pos = pc.panel_width - (pc.width * 0.6);
-
-                if pc.pos < 0.0 {
-                  pc.pos = 0.0;
-                }
-              } else {
-                pc.pos = (pc.height * 0.6) - pc.panel_width;
-
-                if pc.pos > 0.0 {
-                  pc.pos = 0.0;
-                }
-              }
-
-              if let Err(e) = self.draw() {
-                return Err(e);
-              }
+          if let Some(cv) = &self.canvas {
+            if let Err(e) = pc.tool_func(mt, &cv) {
+              return Err(e);
             }
 
-            // 先頭に戻る
-            FuncType::BkTop => {
-              pc.pos = 0.0;
-
-              if let Err(e) = self.draw() {
-                return Err(e);
-              }
+            if let Err(e) = self.draw() {
+              return Err(e);
             }
-
-            _ => {
-              if self.is_black {
-                if let Some(cv) = &self.canvas {
-                  if let Err(e) = pc.tool_func(mt, &cv) {
-                    return Err(e);
-                  }
-
-                  if let Err(e) = self.draw() {
-                    return Err(e);
-                  }
-                } else {
-                  return Err("ERR_GET_CANVAS");
-                }
-              }
-            }
+          } else {
+            return Err("ERR_GET_CANVAS");
           }
         }
       }
+
       TabType::TabBox => {
         if let Some(bx) = &mut self.pbox {
           if let Err(e) = bx.tool_func(mt) {

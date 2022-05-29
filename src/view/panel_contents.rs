@@ -1,4 +1,5 @@
 use super::super::manager;
+use super::super::model::token;
 use super::super::FuncType;
 use super::area;
 use super::canvas;
@@ -17,6 +18,7 @@ pub struct PanelContents {
   pub cur_x: i32,
   pub cur_y: i32,
   pub start_time: f64,
+  pub touch1: f64,
   pub width: f64,
   pub height: f64,
   pub panel_width: f64,
@@ -42,11 +44,12 @@ impl panel::Panel for PanelContents {
       cur_x: 0,
       cur_y: 0,
       start_time: 0.0,
+      touch1: 0.0,
       width: 0.0,
       height: 0.0,
       panel_width: 0.0,
       current: manager::DOC_TOP,
-      black_source: 0,
+      black_source: -1,
       black_token: 0,
       scroll_bar: None,
       plines: Vec::new(),
@@ -92,7 +95,7 @@ impl panel::Panel for PanelContents {
     is_black: bool,
     is_dark: bool,
   ) -> Result<isize, &'static str> {
-    log!("***PanelContents.draw: current={}", self.current);
+    // log!("***PanelContents.draw: current={}", self.current);
     cv.clear(is_dark);
 
     if let Some(sb) = &mut self.scroll_bar {
@@ -361,7 +364,7 @@ impl panel::Panel for PanelContents {
   /// - それ以外 : 異常終了
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
-    //log!("***PanelContents.touch_end");
+    log!("***PanelContents.touch_end");
     let mut ret: isize = -3;
     let mut is_sb: bool = false;
 
@@ -410,13 +413,30 @@ impl panel::Panel for PanelContents {
 
       if self.touching {
         self.pos += diff3 as f64;
-        let diff_t = js_sys::Date::now() - self.start_time;
+        let now = js_sys::Date::now();
+        let diff1 = now - self.start_time;
 
-        if diff_t < 500.0 && diff3.abs() < 20 {
-          let (section, _) =
-            area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
-          ret = section;
+        if diff1 < 500.0 {
+          let diff2 = now - self.touch1;
+
+          if diff2 < 800.0 {
+            // double click
+            if let Err(e) = self.dbl_click() {
+              return Err(e);
+            }
+
+            ret = -2;
+            self.touch1 = 0.0;
+          }
         }
+
+        if ret == -3 {
+          self.touch1 = now;
+        }
+      }
+
+      if diff3 > 10 {
+        self.touch1 = 0.0;
       }
     }
 
@@ -427,8 +447,26 @@ impl panel::Panel for PanelContents {
 
   /// クリック
   fn click(&mut self) -> Result<isize, &'static str> {
-    //log!("***PanelContents.click");
-    Ok(0)
+    let mut ret: isize = 0;
+    let now = js_sys::Date::now();
+    let diff_t = now - self.touch1;
+    self.touch1 = 0.0;
+    let diff_x = (self.cur_x - self.start_x).abs();
+    let diff_y = (self.cur_y - self.start_y).abs();
+    /* */
+    log!(
+      "***PanelContent.click: diff_t={} diff_x={} diff_y={}",
+      diff_t,
+      diff_x,
+      diff_y
+    );
+    /* */
+
+    if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
+      ret = 1;
+    }
+
+    Ok(ret)
   }
 
   /// 行数カウント
@@ -455,18 +493,247 @@ impl panel::Panel for PanelContents {
 impl PanelContents {
   /// 黒塗りを移動する
   pub fn tool_func(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
-    /* */
+    /*
     log!(
-      "***tool_func start self.black_source={} self.black_token={}",
+      "***tool_func start self.black_source={} self.black_token={} plines={}",
       self.black_source,
-      self.black_token
+      self.black_token,
+      self.plines.len()
     );
-    /* */
+    */
     let margin = cv.met + cv.ruby_w + cv.line_margin;
 
     match mt {
-      // 1区切り進む
-      FuncType::FdSlash => {}
+      // 1行進む
+      FuncType::FdSlash => {
+        let mut s: i32 = 0;
+
+        for pl in &self.plines {
+          match s {
+            0 => {
+              if pl.source == self.black_source {
+                // 現在の行が見つかった。
+                s = 1;
+              }
+            }
+            1 => {
+              // 次の行が見つかった。
+              if self.black_source != -1 {
+                self.black_source = pl.source;
+                self.black_token = 0;
+                s = 3;
+                break;
+              }
+              s = 2;
+            }
+            _ => {
+              // 次の行が見つかった。
+              self.black_source = pl.source;
+              self.black_token = 0;
+              s = 3;
+              break;
+            }
+          }
+        }
+
+        if s != 3 {
+          match self.plines.last() {
+            Some(l) => {
+              self.black_source = l.source;
+              self.black_token = l.ptokens.len() as isize;
+            }
+
+            _ => {}
+          }
+        }
+      }
+
+      // 1行戻る
+      FuncType::BkSlash => {
+        let mut s: i32 = 0;
+        //let mut i: usize;
+        let mut j: usize = self.plines.len();
+
+        loop {
+          if j == 0 {
+            break;
+          }
+
+          j -= 1;
+
+          match s {
+            0 => {
+              if self.plines[j].source == self.black_source {
+                // 現在の行が見つかった。
+                s = 1;
+                if self.black_token != 0 {
+                  self.black_token = 0;
+                  break;
+                }
+              }
+            }
+            _ => {
+              // 前の行が見つかった。
+              self.black_source = self.plines[j].source;
+              self.black_token = 0;
+              break;
+            }
+          }
+        }
+      }
+
+      // 1単語進む
+      FuncType::FdOne => {
+        let mut s: i32 = 0;
+
+        for pl in &self.plines {
+          if s == 0 && pl.source == self.black_source {
+            // 現在の行が見つかった。
+            s = 1;
+          }
+
+          if s > 0 {
+            for vl in &pl.lines {
+              for pt in &vl.ptokens {
+                match s {
+                  1 => {
+                    if pt.seq == self.black_token {
+                      // 現在のトークンが見つかった。
+                      s = 2;
+
+                      match pt.ty {
+                        token::TokenType::Alpha
+                        | token::TokenType::Hankigo
+                        | token::TokenType::Kana
+                        | token::TokenType::Yousoku
+                        | token::TokenType::Zenkaku => {
+                          // 現在の文字が見つかった。
+                          s = 3;
+                        }
+
+                        _ => {}
+                      }
+                    }
+                  }
+
+                  2 => {
+                    match pt.ty {
+                      token::TokenType::Alpha
+                      | token::TokenType::Hankigo
+                      | token::TokenType::Kana
+                      | token::TokenType::Yousoku
+                      | token::TokenType::Zenkaku => {
+                        // 現在の文字が見つかった。
+                        s = 3;
+                      }
+
+                      _ => {}
+                    }
+                  }
+
+                  3 => {
+                    match pt.ty {
+                      token::TokenType::Alpha
+                      | token::TokenType::Hankigo
+                      | token::TokenType::Kana
+                      | token::TokenType::Yousoku
+                      | token::TokenType::Zenkaku => {
+                        // 次の文字が見つかった。
+                        s = 4;
+                        self.black_source = pl.source;
+                        self.black_token = pt.seq;
+                        let ai = self.area_index();
+
+                        if ai > -1 {
+                          let a = &self.areas[ai as usize];
+
+                          if self.is_vertical {
+                            if a.x1 < margin {
+                              self.pos += margin - a.x1;
+                            }
+                          } else {
+                            if a.y2 + margin > cv.height {
+                              self.pos += cv.height - margin - a.y2;
+                            }
+                          }
+                        }
+                        break;
+                      }
+
+                      _ => {}
+                    }
+                  }
+
+                  _ => {}
+                }
+              }
+
+              if s == 4 {
+                break;
+              }
+            }
+
+            if s == 4 {
+              break;
+            }
+          }
+        }
+
+        if s != 4 {
+          if let Some(l) = self.plines.last() {
+            self.black_source = l.source;
+            self.black_token = l.ptokens.len() as isize;
+          }
+
+          let ai = self.area_index();
+
+          if ai > -1 {
+            let a = &self.areas[ai as usize];
+
+            if self.is_vertical {
+              if a.x1 < margin {
+                self.pos += margin - a.x1;
+              }
+            } else {
+              if a.y2 + margin > cv.height {
+                self.pos += cv.height - margin - a.y2;
+              }
+            }
+          }
+        }
+      }
+
+      // 末尾に進む
+      FuncType::FdBottom => {
+        self.black_source = 0;
+        self.black_token = 0;
+
+        if let Some(l) = self.plines.last() {
+          self.black_source = l.source;
+          self.black_token = l.ptokens.len() as isize;
+        }
+
+        if self.is_vertical {
+          self.pos = self.panel_width - (self.width * 0.6);
+
+          if self.pos < 0.0 {
+            self.pos = 0.0;
+          }
+        } else {
+          self.pos = (self.height * 0.6) - self.panel_width;
+
+          if self.pos > 0.0 {
+            self.pos = 0.0;
+          }
+        }
+      }
+
+      // 先頭に戻る
+      FuncType::BkTop => {
+        self.pos = 0.0;
+        self.black_source = 0;
+        self.black_token = 0;
+      }
 
       _ => {}
     }
@@ -490,5 +757,38 @@ impl PanelContents {
     } else {
       self.pos = -(cv.met + cv.ruby_w + cv.line_margin) * count as f64;
     }
+  }
+
+  /// ダブルクリック
+  fn dbl_click(&mut self) -> Result<isize, &'static str> {
+    //log!("***PanelSection.dbl_click");
+    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
+
+    if source >= 0 {
+      self.black_source = source;
+      self.black_token = token;
+    }
+
+    Ok(0)
+  }
+
+  fn area_index(&self) -> isize {
+    let mut i: isize = 0;
+    let mut j: isize = -1;
+
+    for a in &self.areas {
+      if a.source > self.black_source {
+        break;
+      }
+
+      if a.source == self.black_source && a.token > self.black_token {
+        break;
+      }
+
+      j = i;
+      i += 1;
+    }
+
+    j
   }
 }

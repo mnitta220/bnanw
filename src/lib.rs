@@ -7,10 +7,12 @@ mod model;
 mod view;
 
 use std::cell::RefCell;
+use strum_macros::Display;
 use wasm_bindgen::prelude::*;
 use web_sys::FontFace;
 
 // ツールボタン操作タイプ
+#[derive(Display, Debug)]
 pub enum FuncType {
   // 1区切り進む
   FdSlash,
@@ -98,7 +100,7 @@ pub fn main() -> Result<(), JsValue> {
 ///
 #[wasm_bindgen]
 pub fn ping(input: isize) -> Result<isize, JsValue> {
-  log!("***ping: input={}", input);
+  // log!("***ping: input={}", input);
   Ok(MANAGER.with(|mg| mg.borrow().ping(input)))
 }
 
@@ -209,6 +211,36 @@ pub fn set_doc(
     }
   }) {
     return Err(JsValue::from_str(&format!("set_doc failed!: {:?}", e1)));
+  }
+
+  Ok(())
+}
+
+/// 段落をセットする
+///
+/// # 引数
+/// ## current
+///
+/// # 戻り値
+/// なし
+///
+#[wasm_bindgen]
+pub fn set_section(
+  current: isize,
+) -> Result<(), JsValue> {
+  if let Err(e1) = MANAGER.with(|mg| {
+    match mg
+      .borrow_mut()
+      .set_section(current)
+    {
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("set_section failed!: {}", e)));
+      }
+
+      _ => Ok(()),
+    }
+  }) {
+    return Err(JsValue::from_str(&format!("set_section failed!: {:?}", e1)));
   }
 
   Ok(())
@@ -499,7 +531,7 @@ pub fn touch_end() -> Result<isize, JsValue> {
 ///
 #[wasm_bindgen]
 pub fn mode_change(black: bool) -> Result<(), JsValue> {
-  log!("***mode_change black={}", black);
+  // log!("***mode_change black={}", black);
 
   if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().mode_change(black) {
     Err(e) => {
