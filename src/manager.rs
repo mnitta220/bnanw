@@ -18,7 +18,8 @@ pub struct Manager {
   pub sources: Vec<source::Source>,
   pub contents: Vec<usize>,
   pub tab: TabType,
-  pub is_black: bool,
+  pub is_black_text: bool,
+  pub is_black_contents: bool,
   pub is_dark: bool,
   pub section: isize,
   pub pcon: Option<view::panel_contents::PanelContents>,
@@ -41,7 +42,8 @@ impl Manager {
       sources: Vec::new(),
       contents: Vec::new(),
       tab: TabType::TabText,
-      is_black: false,
+      is_black_text: false,
+      is_black_contents: false,
       is_dark: false,
       section: 0,
       pcon: None,
@@ -80,7 +82,8 @@ impl Manager {
     }
 
     self.is_vertical = is_vertical;
-    self.is_black = false;
+    self.is_black_text = false;
+    self.is_black_contents = false;
     self.font_size = font_size;
     self.section = current;
     self.sources.clear();
@@ -101,7 +104,7 @@ impl Manager {
   ) -> Result<isize, &'static str> {
     //log!("***Manager.set_doc: id={} current={}", id, current);
     self.tab = TabType::TabText;
-    self.is_black = false;
+    //self.is_black = false;
     self.section = current;
     self.sources.clear();
     self.contents.clear();
@@ -362,7 +365,7 @@ impl Manager {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
 
-            if let Err(e) = pc.draw(&cv, &mut areas, self.is_black, self.is_dark) {
+            if let Err(e) = pc.draw(&cv, &mut areas, self.is_black_contents, self.is_dark) {
               return Err(e);
             }
 
@@ -379,7 +382,7 @@ impl Manager {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
 
-            if let Err(e) = ps.draw(&cv, &mut areas, self.is_black, self.is_dark) {
+            if let Err(e) = ps.draw(&cv, &mut areas, self.is_black_text, self.is_dark) {
               return Err(e);
             }
 
@@ -397,7 +400,7 @@ impl Manager {
             if let Some(cv) = &self.canvas {
               let mut areas: Vec<view::area::Area> = Vec::new();
 
-              if let Err(e) = bx.draw(tr, &cv, &mut areas, self.is_black, self.is_dark, 32) {
+              if let Err(e) = bx.draw(tr, &cv, &mut areas, self.is_black_text, self.is_dark, 32) {
                 return Err(e);
               }
 
@@ -547,7 +550,7 @@ impl Manager {
   /// - それ以外 : 異常終了
   ///
   pub fn touch_end(&mut self) -> Result<isize, &'static str> {
-    log!("***Manager.touch_end");
+    //log!("***Manager.touch_end");
     let mut ret: isize = -3;
 
     match self.tab {
@@ -577,7 +580,7 @@ impl Manager {
         if let Some(ps) = &mut self.psec {
           match ps.touch_end() {
             Ok(r) => {
-              if self.is_black && r == -2 {
+              if self.is_black_text && r == -2 {
                 if let Err(e) = self.draw() {
                   return Err(e);
                 }
@@ -593,7 +596,7 @@ impl Manager {
         if let Some(bx) = &mut self.pbox {
           match bx.touch_end() {
             Ok(r) => {
-              if self.is_black && r == -2 {
+              if self.is_black_text && r == -2 {
                 if let Err(e) = self.draw() {
                   return Err(e);
                 }
@@ -687,11 +690,11 @@ impl Manager {
     //log!("***mode_change black={}", black);
     match self.tab {
       TabType::TabText => {
-        self.is_black = black;
+        self.is_black_text = black;
         self.draw()
       }
       TabType::TabContents => {
-        self.is_black = black;
+        self.is_black_contents = black;
         self.draw()
       }
       _ => Ok(0),
@@ -876,7 +879,7 @@ impl Manager {
 
           _ => {
             if let Some(ps) = &mut self.psec {
-              if self.is_black {
+              if self.is_black_text {
                 if let Some(cv) = &self.canvas {
                   if let Err(e) = ps.tool_func(mt, &cv) {
                     return Err(e);

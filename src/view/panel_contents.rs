@@ -364,7 +364,7 @@ impl panel::Panel for PanelContents {
   /// - それ以外 : 異常終了
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
-    log!("***PanelContents.touch_end");
+    //log!("***PanelContents.touch_end");
     let mut ret: isize = -3;
     let mut is_sb: bool = false;
 
@@ -411,6 +411,19 @@ impl panel::Panel for PanelContents {
         diff3 = self.cur_y - self.start_y;
       }
 
+      /*
+      if self.touching {
+        self.pos += diff3 as f64;
+        let diff_t = js_sys::Date::now() - self.start_time;
+
+        if diff_t < 500.0 && diff3.abs() < 20 {
+          let (section, _) =
+            area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
+          ret = section;
+        }
+      }
+      */
+
       if self.touching {
         self.pos += diff3 as f64;
         let now = js_sys::Date::now();
@@ -427,6 +440,12 @@ impl panel::Panel for PanelContents {
 
             ret = -2;
             self.touch1 = 0.0;
+          } else {
+            if diff3.abs() < 20 {
+              let (section, _) =
+                area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
+              ret = section;
+            }
           }
         }
 

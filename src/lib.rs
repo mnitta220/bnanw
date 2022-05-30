@@ -228,6 +228,7 @@ pub fn set_doc(
 pub fn set_section(
   current: isize,
 ) -> Result<(), JsValue> {
+  //log!("***set_section: current={}", current);
   if let Err(e1) = MANAGER.with(|mg| {
     match mg
       .borrow_mut()
