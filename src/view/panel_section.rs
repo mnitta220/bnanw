@@ -327,7 +327,7 @@ impl panel::Panel for PanelSection {
   /// - それ以外 : 異常終了
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
-    log!("***PanelSection.touch_end");
+    //log!("***PanelSection.touch_end");
     let mut ret: isize = -3;
     let mut is_sb: bool = false;
 

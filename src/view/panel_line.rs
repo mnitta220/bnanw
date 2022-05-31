@@ -850,7 +850,8 @@ impl PanelLine {
               token::TokenType::Zenkigo => {
                 if black == false {
                   cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                  cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                  //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                  cv.context.fill_text(&t.word,  y + (cv.metr * 0.22), -x - (cv.metr * 0.22)).unwrap();
                   cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
                 }
 

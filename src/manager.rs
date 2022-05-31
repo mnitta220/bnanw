@@ -622,7 +622,7 @@ impl Manager {
 
   /// クリック
   pub fn click(&mut self) -> Result<isize, &'static str> {
-    log!("***clicked!");
+    //log!("***clicked!");
 
     match self.tab {
       TabType::TabContents => {
