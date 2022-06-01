@@ -28,6 +28,7 @@ pub struct PanelContents {
   pub scroll_bar: Option<scroll_bar::ScrollBar>,
   pub plines: Vec<panel_line::PanelLine>,
   pub areas: Vec<area::Area>,
+  pub is_black: bool,
 }
 
 impl panel::Panel for PanelContents {
@@ -54,6 +55,7 @@ impl panel::Panel for PanelContents {
       scroll_bar: None,
       plines: Vec::new(),
       areas: Vec::new(),
+      is_black: false,
     };
 
     if let Some(cv) = &mgr.canvas {
@@ -97,6 +99,7 @@ impl panel::Panel for PanelContents {
   ) -> Result<isize, &'static str> {
     // log!("***PanelContents.draw: current={}", self.current);
     cv.clear(is_dark);
+    self.is_black = is_black;
 
     if let Some(sb) = &mut self.scroll_bar {
       let mut diff: f64 = 0.0;
@@ -444,7 +447,12 @@ impl panel::Panel for PanelContents {
             if diff3.abs() < 20 {
               let (section, _) =
                 area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
-              ret = section;
+              if self.is_black && self.black_source <= section {
+                ret = -3;
+              } else {
+                ret = section;
+              }
+              //log!("***ret={} is_black={} black_source={} section={}", ret, self.is_black, self.black_source, section);
             }
           }
         }
@@ -472,14 +480,14 @@ impl panel::Panel for PanelContents {
     self.touch1 = 0.0;
     let diff_x = (self.cur_x - self.start_x).abs();
     let diff_y = (self.cur_y - self.start_y).abs();
-    /* */
+    /*
     log!(
       "***PanelContent.click: diff_t={} diff_x={} diff_y={}",
       diff_t,
       diff_x,
       diff_y
     );
-    /* */
+    */
 
     if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
       ret = 1;
