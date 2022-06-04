@@ -62,7 +62,7 @@ extern "C" {
 
 pub fn click_handle() -> click::ClickHandle {
   let cb = Closure::wrap(Box::new(|| {
-    //log!("timeout elapsed!");
+    log!("timeout elapsed!");
     MANAGER.with(|mg| match mg.try_borrow_mut() {
       Ok(mut m) => match m.click() {
         Ok(t) => t,

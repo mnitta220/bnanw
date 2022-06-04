@@ -1,7 +1,4 @@
-//use super::model::boxs;
-//use super::model::contents;
 use super::model::source;
-//use super::model::token;
 use super::util;
 use super::view;
 use super::FuncType;
@@ -30,6 +27,7 @@ pub struct Manager {
   pub canvas: Option<view::canvas::Canvas>,
   pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
+  pub is_dblclick: bool,
 }
 
 impl Manager {
@@ -54,6 +52,7 @@ impl Manager {
       canvas: None,
       click_handle: Vec::new(),
       font_loaded: false,
+      is_dblclick: false,
     }
   }
 
@@ -434,6 +433,12 @@ impl Manager {
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
+          //if self.click_handle.len() == 0 {
+          self.is_dblclick = false;
+          //}
+          let handle = super::click_handle();
+          self.click_handle.push(handle);
+
           if let Err(e) = pc.touch_start(x, y) {
             return Err(e);
           }
@@ -557,15 +562,15 @@ impl Manager {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
           match pc.touch_end() {
-            Ok(i) => {
-              //log!("***Manager.touch_end i={}", i);
-              if i > -2 {
-                // 目次選択
-                //if let Err(e) = self.change_section(i) {
-                //  return Err(e);
-                //}
-
-                ret = i;
+            Ok(r) => {
+              if self.is_black_contents && r == -2 {
+                self.is_dblclick = true;
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+              if r > -2 {
+                ret = r;
               }
             }
 
@@ -622,11 +627,14 @@ impl Manager {
 
   /// クリック
   pub fn click(&mut self) -> Result<isize, &'static str> {
-    //log!("***clicked!");
+    log!("***clicked!");
 
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
+          if self.is_dblclick {
+            return Ok(0);
+          }
           match pc.click() {
             Ok(r) => {
               if r == 1 {

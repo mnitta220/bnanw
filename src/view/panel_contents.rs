@@ -364,6 +364,7 @@ impl panel::Panel for PanelContents {
   /// - -2 : ダブルタップ
   /// - -1 : Top選択
   /// - 0以上 : セクション選択
+  /// - -4 : ドラッグ終了
   /// - それ以外 : 異常終了
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
@@ -414,19 +415,6 @@ impl panel::Panel for PanelContents {
         diff3 = self.cur_y - self.start_y;
       }
 
-      /*
-      if self.touching {
-        self.pos += diff3 as f64;
-        let diff_t = js_sys::Date::now() - self.start_time;
-
-        if diff_t < 500.0 && diff3.abs() < 20 {
-          let (section, _) =
-            area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
-          ret = section;
-        }
-      }
-      */
-
       if self.touching {
         self.pos += diff3 as f64;
         let now = js_sys::Date::now();
@@ -452,9 +440,12 @@ impl panel::Panel for PanelContents {
               } else {
                 ret = section;
               }
-              //log!("***ret={} is_black={} black_source={} section={}", ret, self.is_black, self.black_source, section);
+            } else {
+              ret = -4;
             }
           }
+        } else {
+          ret = -4;
         }
 
         if ret == -3 {
@@ -480,19 +471,20 @@ impl panel::Panel for PanelContents {
     self.touch1 = 0.0;
     let diff_x = (self.cur_x - self.start_x).abs();
     let diff_y = (self.cur_y - self.start_y).abs();
-    /*
-    log!(
-      "***PanelContent.click: diff_t={} diff_x={} diff_y={}",
-      diff_t,
-      diff_x,
-      diff_y
-    );
-    */
 
     if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
       ret = 1;
     }
 
+    /**/
+    log!(
+      "***PanelContent.click: diff_t={} diff_x={} diff_y={} ret={}",
+      diff_t,
+      diff_x,
+      diff_y,
+      ret
+    );
+    /**/
     Ok(ret)
   }
 
@@ -788,7 +780,7 @@ impl PanelContents {
 
   /// ダブルクリック
   fn dbl_click(&mut self) -> Result<isize, &'static str> {
-    //log!("***PanelSection.dbl_click");
+    log!("***PanelContents.dbl_click");
     let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
 
     if source >= 0 {
