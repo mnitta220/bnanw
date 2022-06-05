@@ -408,6 +408,7 @@ impl panel::Panel for PanelSection {
     Ok(ret)
   }
 
+  /*
   /// クリック
   fn click(&mut self) -> Result<isize, &'static str> {
     let mut ret: isize = 0;
@@ -416,14 +417,6 @@ impl panel::Panel for PanelSection {
     self.touch1 = 0.0;
     let diff_x = (self.cur_x - self.start_x).abs();
     let diff_y = (self.cur_y - self.start_y).abs();
-    /*
-    log!(
-      "***PanelSection.click: diff_t={} diff_x={} diff_y={}",
-      diff_t,
-      diff_x,
-      diff_y
-    );
-    */
 
     if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
       ret = 1;
@@ -431,6 +424,7 @@ impl panel::Panel for PanelSection {
 
     Ok(ret)
   }
+  */
 
   /// 行数カウント
   fn count_lines(&self) -> usize {
@@ -458,6 +452,18 @@ impl panel::Panel for PanelSection {
 }
 
 impl PanelSection {
+  /// シングルクリック
+  pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    log!("***PanelSection.single_click: x={} y={}", x, y);
+    Ok(0)
+  }
+
+  /// ダブルクリック
+  pub fn double_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    log!("***PanelSection.double_click: x={} y={}", x, y);
+    Ok(0)
+  }
+
   /// 黒塗りを移動する
   pub fn tool_func(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
     /*

@@ -32,7 +32,7 @@ pub trait Panel {
   fn touch_end(&mut self) -> Result<isize, &'static str>;
 
   /// クリック
-  fn click(&mut self) -> Result<isize, &'static str>;
+  //fn click(&mut self) -> Result<isize, &'static str>;
 
   /// 行数カウント
   fn count_lines(&self) -> usize;

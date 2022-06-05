@@ -369,7 +369,7 @@ impl panel::Panel for PanelContents {
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
     //log!("***PanelContents.touch_end");
-    let mut ret: isize = -3;
+    let ret: isize = -3;
     let mut is_sb: bool = false;
 
     match &mut self.scroll_bar {
@@ -417,6 +417,7 @@ impl panel::Panel for PanelContents {
 
       if self.touching {
         self.pos += diff3 as f64;
+        /*
         let now = js_sys::Date::now();
         let diff1 = now - self.start_time;
 
@@ -451,6 +452,7 @@ impl panel::Panel for PanelContents {
         if ret == -3 {
           self.touch1 = now;
         }
+        */
       }
 
       if diff3 > 10 {
@@ -463,6 +465,7 @@ impl panel::Panel for PanelContents {
     Ok(ret)
   }
 
+  /*
   /// クリック
   fn click(&mut self) -> Result<isize, &'static str> {
     let mut ret: isize = 0;
@@ -476,17 +479,9 @@ impl panel::Panel for PanelContents {
       ret = 1;
     }
 
-    /**/
-    log!(
-      "***PanelContent.click: diff_t={} diff_x={} diff_y={} ret={}",
-      diff_t,
-      diff_x,
-      diff_y,
-      ret
-    );
-    /**/
     Ok(ret)
   }
+  */
 
   /// 行数カウント
   fn count_lines(&self) -> usize {
@@ -510,6 +505,34 @@ impl panel::Panel for PanelContents {
 }
 
 impl PanelContents {
+  /// シングルクリック
+  ///
+  /// # 戻り値
+  /// - -3 : 正常終了
+  /// - -2 : ダブルタップ
+  /// - -1 : Top選択
+  /// - 0以上 : セクション選択
+  /// - それ以外 : 異常終了
+  ///
+  pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    log!("***PanelContents.single_click: x={} y={}", x, y);
+    let ret: isize;
+    let (section, _) =
+      area::Area::touch_pos(&self.areas, x as f64, y as f64);
+    if self.is_black && self.black_source <= section {
+      ret = -3;
+    } else {
+      ret = section;
+    }
+    Ok(ret)
+  }
+
+  /// ダブルクリック
+  pub fn double_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    log!("***PanelContents.double_click: x={} y={}", x, y);
+    Ok(0)
+  }
+
   /// 黒塗りを移動する
   pub fn tool_func(&mut self, mt: FuncType, cv: &canvas::Canvas) -> Result<isize, &'static str> {
     /*
@@ -778,6 +801,7 @@ impl PanelContents {
     }
   }
 
+  /*
   /// ダブルクリック
   fn dbl_click(&mut self) -> Result<isize, &'static str> {
     log!("***PanelContents.dbl_click");
@@ -790,6 +814,7 @@ impl PanelContents {
 
     Ok(0)
   }
+  */
 
   fn area_index(&self) -> isize {
     let mut i: isize = 0;

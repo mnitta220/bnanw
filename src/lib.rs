@@ -1,15 +1,18 @@
 #[macro_use]
 mod util;
 
-mod click;
+//mod click;
 mod manager;
 mod model;
 mod view;
 
+//use core::num;
 use std::cell::RefCell;
+//use std::time::Duration;
 use strum_macros::Display;
 use wasm_bindgen::prelude::*;
 use web_sys::FontFace;
+//use wasm_timer::Delay;
 
 // ツールボタン操作タイプ
 #[derive(Display, Debug)]
@@ -60,6 +63,7 @@ extern "C" {
   fn setTimeout(closure: &Closure<dyn FnMut()>, time: u32) -> i32;
 }
 
+/*
 pub fn click_handle() -> click::ClickHandle {
   let cb = Closure::wrap(Box::new(|| {
     log!("timeout elapsed!");
@@ -83,6 +87,7 @@ pub fn click_handle() -> click::ClickHandle {
     closure: cb,
   }
 }
+*/
 
 /// 起動時処理
 #[wasm_bindgen(start)]
@@ -521,6 +526,96 @@ pub fn touch_end() -> Result<isize, JsValue> {
 
   Ok(ret)
 }
+
+/// シングルクリック
+///
+/// # 引数
+/// ## x
+/// ## y
+///
+/// # 戻り値
+/// - -3 : 正常終了
+/// - -1 : Top選択
+/// - 0以上 : セクション選択
+/// - それ以外 : 異常終了
+///
+#[wasm_bindgen]
+pub fn single_click(x: i32, y: i32) -> Result<isize, JsValue> {
+  log!("***single_click: x={} y={}", x, y);
+  let mut ret: isize = -3;
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
+    Ok(mut m) => match m.single_click(x, y) {
+      Ok(r) => {
+        ret = r;
+
+        Ok(ret)
+      }
+
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("single_click failed!: {}", e)));
+      }
+    },
+
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("single_click failed!: {}", e)));
+    }
+  }) {
+    return Err(JsValue::from_str(&format!("single_click failed!: {:?}", e1)));
+  }
+
+  Ok(ret)
+}
+
+/// ダブルクリック
+///
+/// # 引数
+/// ## x
+/// ## y
+///
+/// # 戻り値
+/// - -3 : 正常終了
+/// - -1 : Top選択
+/// - 0以上 : セクション選択
+/// - それ以外 : 異常終了
+///
+#[wasm_bindgen]
+pub fn double_click(x: i32, y: i32) -> Result<isize, JsValue> {
+  log!("***double_click: x={} y={}", x, y);
+  let mut ret: isize = -3;
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
+    Ok(mut m) => match m.double_click(x, y) {
+      Ok(r) => {
+        ret = r;
+
+        Ok(ret)
+      }
+
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("double_click failed!: {}", e)));
+      }
+    },
+
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("double_click failed!: {}", e)));
+    }
+  }) {
+    return Err(JsValue::from_str(&format!("double_click failed!: {:?}", e1)));
+  }
+
+  Ok(ret)
+}
+
+/*
+#[wasm_bindgen]
+pub async fn sleep_millis(numbers: u16) -> js_sys::Promise {
+  let millis: u64 = u64::from(numbers);
+  Delay::new(Duration::from_millis(millis)).await.unwrap();
+  let promise = js_sys::Promise::resolve(&numbers.into());
+  return promise;
+}
+*/
 
 /// 黒塗りモードを変更する
 ///

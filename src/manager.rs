@@ -25,9 +25,9 @@ pub struct Manager {
   pub pbd: Option<view::panel_board::PanelBoard>,
   pub tree: Option<super::model::contents::ContentTree>,
   pub canvas: Option<view::canvas::Canvas>,
-  pub click_handle: Vec<super::click::ClickHandle>,
+  //pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
-  pub is_dblclick: bool,
+  //pub is_dblclick: bool,
 }
 
 impl Manager {
@@ -50,9 +50,9 @@ impl Manager {
       pbd: None,
       tree: None,
       canvas: None,
-      click_handle: Vec::new(),
+      //click_handle: Vec::new(),
       font_loaded: false,
-      is_dblclick: false,
+      //is_dblclick: false,
     }
   }
 
@@ -196,7 +196,7 @@ impl Manager {
       return Err(e);
     }
 
-    self.click_handle.clear();
+    //self.click_handle.clear();
 
     if let Err(e) = self.draw() {
       return Err(e);
@@ -279,7 +279,7 @@ impl Manager {
       ps.black_token = black_token;
     }
 
-    self.click_handle.clear();
+    //self.click_handle.clear();
 
     if let Err(e) = self.draw() {
       return Err(e);
@@ -434,10 +434,10 @@ impl Manager {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
           //if self.click_handle.len() == 0 {
-          self.is_dblclick = false;
+          //self.is_dblclick = false;
           //}
-          let handle = super::click_handle();
-          self.click_handle.push(handle);
+          //let handle = super::click_handle();
+          //self.click_handle.push(handle);
 
           if let Err(e) = pc.touch_start(x, y) {
             return Err(e);
@@ -446,8 +446,8 @@ impl Manager {
       }
       TabType::TabText => {
         if let Some(ps) = &mut self.psec {
-          let handle = super::click_handle();
-          self.click_handle.push(handle);
+          //let handle = super::click_handle();
+          //self.click_handle.push(handle);
 
           if let Err(e) = ps.touch_start(x, y) {
             return Err(e);
@@ -456,8 +456,8 @@ impl Manager {
       }
       TabType::TabBox => {
         if let Some(bx) = &mut self.pbox {
-          let handle = super::click_handle();
-          self.click_handle.push(handle);
+          //let handle = super::click_handle();
+          //self.click_handle.push(handle);
 
           if let Err(e) = bx.touch_start(x, y) {
             return Err(e);
@@ -564,7 +564,7 @@ impl Manager {
           match pc.touch_end() {
             Ok(r) => {
               if self.is_black_contents && r == -2 {
-                self.is_dblclick = true;
+                //self.is_dblclick = true;
                 if let Err(e) = self.draw() {
                   return Err(e);
                 }
@@ -625,6 +625,7 @@ impl Manager {
     Ok(ret)
   }
 
+  /*
   /// クリック
   pub fn click(&mut self) -> Result<isize, &'static str> {
     log!("***clicked!");
@@ -632,9 +633,9 @@ impl Manager {
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
-          if self.is_dblclick {
-            return Ok(0);
-          }
+          //if self.is_dblclick {
+          //  return Ok(0);
+          //}
           match pc.click() {
             Ok(r) => {
               if r == 1 {
@@ -691,6 +692,81 @@ impl Manager {
     }
 
     Ok(0)
+  }
+  */
+
+  /// シングルクリック
+  pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    let mut ret: isize = -3;
+
+    match self.tab {
+      TabType::TabContents => {
+        if let Some(pc) = &mut self.pcon {
+          match pc.single_click(x, y) {
+            Ok(r) => {
+              ret = r;
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
+      TabType::TabText => {
+        if let Some(ps) = &mut self.psec {
+          match ps.single_click(x, y) {
+            Ok(r) => {
+              ret = r;
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
+      _ => {}
+    }
+
+    Ok(ret)
+  }
+
+  /// ダブルクリック
+  pub fn double_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
+    let mut ret: isize = -3;
+
+    match self.tab {
+      TabType::TabContents => {
+        if let Some(pc) = &mut self.pcon {
+          match pc.double_click(x, y) {
+            Ok(r) => {
+              ret = r;
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
+      TabType::TabText => {
+        if let Some(ps) = &mut self.psec {
+          match ps.double_click(x, y) {
+            Ok(r) => {
+              ret = r;
+            }
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
+      _ => {}
+    }
+
+    Ok(ret)
   }
 
   /// 黒塗りモードを変更する
