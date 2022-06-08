@@ -1,4 +1,5 @@
 use super::super::manager;
+use super::super::model::source;
 use super::super::model::token;
 use super::super::FuncType;
 use super::area;
@@ -18,7 +19,6 @@ pub struct PanelContents {
   pub cur_x: i32,
   pub cur_y: i32,
   pub start_time: f64,
-  pub touch1: f64,
   pub width: f64,
   pub height: f64,
   pub panel_width: f64,
@@ -32,6 +32,7 @@ pub struct PanelContents {
 }
 
 impl panel::Panel for PanelContents {
+  /*
   fn new(mgr: &manager::Manager) -> Self {
     //log!("***PanelContents.new");
 
@@ -45,7 +46,6 @@ impl panel::Panel for PanelContents {
       cur_x: 0,
       cur_y: 0,
       start_time: 0.0,
-      touch1: 0.0,
       width: 0.0,
       height: 0.0,
       panel_width: 0.0,
@@ -60,32 +60,55 @@ impl panel::Panel for PanelContents {
 
     if let Some(cv) = &mgr.canvas {
       let scroll_bar;
-      //log!("***PanelContents.new2");
 
       if mgr.is_vertical {
         scroll_bar = scroll_bar::ScrollBar::new(true, 2.0, cv.height - 11.0, cv.width - 4.0);
       } else {
         scroll_bar = scroll_bar::ScrollBar::new(false, cv.width - 11.0, 2.0, cv.height - 4.0);
       }
-      //log!("***PanelContents.new3");
 
       pc.scroll_bar = Some(scroll_bar);
       let pl = panel_line::PanelLine::top(mgr.is_vertical);
       pc.plines.push(pl);
-      //log!("***PanelContents.new4");
 
       for c in &mgr.contents {
         let pl = panel_line::PanelLine::new(mgr.is_vertical, &mgr.sources[*c], &cv);
         pc.plines.push(pl);
       }
-      //log!("***PanelContents.new5");
 
       pc.width = cv.width;
       pc.height = cv.height;
       let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * (pc.count_lines() + 1) as f64;
       pc.set_panel_width(panel_width);
     }
-    //log!("***PanelContents.new6");
+
+    pc
+  }
+  */
+  fn new() -> Self {
+    //log!("***PanelContents.new");
+
+    let pc = PanelContents {
+      is_vertical: false,
+      font_size: 0,
+      pos: 0.0,
+      touching: false,
+      start_x: 0,
+      start_y: 0,
+      cur_x: 0,
+      cur_y: 0,
+      start_time: 0.0,
+      width: 0.0,
+      height: 0.0,
+      panel_width: 0.0,
+      current: manager::DOC_TOP,
+      black_source: -1,
+      black_token: 0,
+      scroll_bar: None,
+      plines: Vec::new(),
+      areas: Vec::new(),
+      is_black: false,
+    };
 
     pc
   }
@@ -97,7 +120,11 @@ impl panel::Panel for PanelContents {
     is_black: bool,
     is_dark: bool,
   ) -> Result<isize, &'static str> {
-    // log!("***PanelContents.draw: current={}", self.current);
+    /*log!(
+      "***PanelContents.draw: current={} black_source={}",
+      self.current,
+      self.black_source
+    );*/
     cv.clear(is_dark);
     self.is_black = is_black;
 
@@ -417,46 +444,6 @@ impl panel::Panel for PanelContents {
 
       if self.touching {
         self.pos += diff3 as f64;
-        /*
-        let now = js_sys::Date::now();
-        let diff1 = now - self.start_time;
-
-        if diff1 < 500.0 {
-          let diff2 = now - self.touch1;
-
-          if diff2 < 800.0 {
-            // double click
-            if let Err(e) = self.dbl_click() {
-              return Err(e);
-            }
-
-            ret = -2;
-            self.touch1 = 0.0;
-          } else {
-            if diff3.abs() < 20 {
-              let (section, _) =
-                area::Area::touch_pos(&self.areas, self.start_x as f64, self.start_y as f64);
-              if self.is_black && self.black_source <= section {
-                ret = -3;
-              } else {
-                ret = section;
-              }
-            } else {
-              ret = -4;
-            }
-          }
-        } else {
-          ret = -4;
-        }
-
-        if ret == -3 {
-          self.touch1 = now;
-        }
-        */
-      }
-
-      if diff3 > 10 {
-        self.touch1 = 0.0;
       }
     }
 
@@ -466,22 +453,65 @@ impl panel::Panel for PanelContents {
   }
 
   /*
-  /// クリック
-  fn click(&mut self) -> Result<isize, &'static str> {
-    let mut ret: isize = 0;
-    let now = js_sys::Date::now();
-    let diff_t = now - self.touch1;
-    self.touch1 = 0.0;
-    let diff_x = (self.cur_x - self.start_x).abs();
-    let diff_y = (self.cur_y - self.start_y).abs();
+  /// 行数カウント
+  fn count_lines(&self) -> usize {
+    let mut c: usize = 0;
 
-    if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
-      ret = 1;
+    for l in &self.plines {
+      c += l.lines.len();
     }
 
-    Ok(ret)
+    c
+  }
+
+  /// パネル幅設定
+  fn set_panel_width(&mut self, panel_width: f64) {
+    self.panel_width = panel_width;
+
+    if let Some(s) = &mut self.scroll_bar {
+      s.panel_width = panel_width;
+    }
   }
   */
+}
+
+impl PanelContents {
+  pub fn set_manager(
+    &mut self,
+    is_vertical: bool,
+    font_size: isize,
+    canvas: &Option<canvas::Canvas>,
+    contents: &Vec<usize>,
+    sources: &Vec<source::Source>,
+  ) {
+    self.is_vertical = is_vertical;
+    self.font_size = font_size;
+
+    if let Some(cv) = &canvas {
+      let scroll_bar;
+
+      if is_vertical {
+        scroll_bar = scroll_bar::ScrollBar::new(true, 2.0, cv.height - 11.0, cv.width - 4.0);
+      } else {
+        scroll_bar = scroll_bar::ScrollBar::new(false, cv.width - 11.0, 2.0, cv.height - 4.0);
+      }
+
+      self.scroll_bar = Some(scroll_bar);
+      self.plines.clear();
+      let pl = panel_line::PanelLine::top(is_vertical);
+      self.plines.push(pl);
+
+      for c in contents {
+        let pl = panel_line::PanelLine::new(is_vertical, &sources[*c], &cv);
+        self.plines.push(pl);
+      }
+
+      self.width = cv.width;
+      self.height = cv.height;
+      let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * (self.count_lines() + 1) as f64;
+      self.set_panel_width(panel_width);
+    }
+  }
 
   /// 行数カウント
   fn count_lines(&self) -> usize {
@@ -502,9 +532,7 @@ impl panel::Panel for PanelContents {
       s.panel_width = panel_width;
     }
   }
-}
 
-impl PanelContents {
   /// シングルクリック
   ///
   /// # 戻り値
@@ -515,10 +543,11 @@ impl PanelContents {
   /// - それ以外 : 異常終了
   ///
   pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    log!("***PanelContents.single_click: x={} y={}", x, y);
+    //log!("***PanelContents.single_click: x={} y={}", x, y);
+    self.cur_x = x;
+    self.cur_y = y;
     let ret: isize;
-    let (section, _) =
-      area::Area::touch_pos(&self.areas, x as f64, y as f64);
+    let (section, _) = area::Area::touch_pos(&self.areas, x as f64, y as f64);
     if self.is_black && self.black_source <= section {
       ret = -3;
     } else {
@@ -529,7 +558,16 @@ impl PanelContents {
 
   /// ダブルクリック
   pub fn double_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    log!("***PanelContents.double_click: x={} y={}", x, y);
+    //log!("***PanelContents.double_click: x={} y={}", x, y);
+    self.cur_x = x;
+    self.cur_y = y;
+    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
+
+    if source >= 0 {
+      self.black_source = source;
+      self.black_token = token;
+    }
+
     Ok(0)
   }
 
@@ -579,46 +617,61 @@ impl PanelContents {
         }
 
         if s != 3 {
+          if let Some(l) = self.plines.last() {
+            self.black_source = l.source + 1;
+            self.black_token = 0;
+          }
+          /*
           match self.plines.last() {
             Some(l) => {
-              self.black_source = l.source;
-              self.black_token = l.ptokens.len() as isize;
+              self.black_source = l.source + 1;
+              self.black_token = 0;
             }
 
             _ => {}
           }
+          */
         }
       }
 
       // 1行戻る
       FuncType::BkSlash => {
-        let mut s: i32 = 0;
-        //let mut i: usize;
-        let mut j: usize = self.plines.len();
-
-        loop {
-          if j == 0 {
-            break;
+        let mut last = false;
+        if let Some(l) = self.plines.last() {
+          if self.black_source > l.source {
+            last = true;
+            self.black_source = l.source;
+            self.black_token = 0;
           }
+        }
+        if last == false {
+          let mut s: i32 = 0;
+          let mut j: usize = self.plines.len();
 
-          j -= 1;
+          loop {
+            if j == 0 {
+              break;
+            }
 
-          match s {
-            0 => {
-              if self.plines[j].source == self.black_source {
-                // 現在の行が見つかった。
-                s = 1;
-                if self.black_token != 0 {
-                  self.black_token = 0;
-                  break;
+            j -= 1;
+
+            match s {
+              0 => {
+                if self.plines[j].source == self.black_source {
+                  // 現在の行が見つかった。
+                  s = 1;
+                  if self.black_token != 0 {
+                    self.black_token = 0;
+                    break;
+                  }
                 }
               }
-            }
-            _ => {
-              // 前の行が見つかった。
-              self.black_source = self.plines[j].source;
-              self.black_token = 0;
-              break;
+              _ => {
+                // 前の行が見つかった。
+                self.black_source = self.plines[j].source;
+                self.black_token = 0;
+                break;
+              }
             }
           }
         }
@@ -785,7 +838,6 @@ impl PanelContents {
 
   pub fn set_current(&mut self, cur: isize, cv: &canvas::Canvas) {
     self.current = cur;
-    //let mut p: f64 = 0.0;
     let mut count: usize = 0;
     for l in &self.plines {
       if l.source == self.current {
@@ -800,21 +852,6 @@ impl PanelContents {
       self.pos = -(cv.met + cv.ruby_w + cv.line_margin) * count as f64;
     }
   }
-
-  /*
-  /// ダブルクリック
-  fn dbl_click(&mut self) -> Result<isize, &'static str> {
-    log!("***PanelContents.dbl_click");
-    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
-
-    if source >= 0 {
-      self.black_source = source;
-      self.black_token = token;
-    }
-
-    Ok(0)
-  }
-  */
 
   fn area_index(&self) -> isize {
     let mut i: isize = 0;

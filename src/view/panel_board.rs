@@ -1,4 +1,4 @@
-use super::super::manager;
+//use super::super::manager;
 use super::super::model::stroke;
 use super::canvas;
 use wasm_bindgen::prelude::*;
@@ -11,6 +11,7 @@ pub struct PanelBoard {
 }
 
 impl PanelBoard {
+  /*
   pub fn new(mgr: &manager::Manager) -> Self {
     let mut pb = PanelBoard {
       width: 0.0,
@@ -25,6 +26,24 @@ impl PanelBoard {
     }
 
     pb
+  }
+  */
+  pub fn new() -> Self {
+    let pb = PanelBoard {
+      width: 0.0,
+      height: 0.0,
+      touching: false,
+      strokes: Vec::new(),
+    };
+
+    pb
+  }
+
+  pub fn set_manager(&mut self, canvas: &Option<canvas::Canvas>) {
+    if let Some(cv) = &canvas {
+      self.width = cv.width;
+      self.height = cv.height;
+    }
   }
 
   pub fn draw(&mut self, cv: &canvas::Canvas, is_dark: bool) -> Result<isize, &'static str> {

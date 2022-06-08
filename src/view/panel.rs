@@ -1,9 +1,12 @@
-use super::super::manager;
+//use super::super::manager;
 use super::area;
 use super::canvas;
 
 pub trait Panel {
-  fn new(pdoc: &manager::Manager) -> Self;
+  //fn new(pdoc: &manager::Manager) -> Self;
+  fn new() -> Self;
+
+  //fn set_manager(&mut self, mgr: &manager::Manager);
 
   /// 文書を表示する。
   fn draw(
@@ -31,12 +34,9 @@ pub trait Panel {
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str>;
 
-  /// クリック
-  //fn click(&mut self) -> Result<isize, &'static str>;
+  // 行数カウント
+  //fn count_lines(&self) -> usize;
 
-  /// 行数カウント
-  fn count_lines(&self) -> usize;
-
-  /// パネル幅設定
-  fn set_panel_width(&mut self, panel_width: f64);
+  // パネル幅設定
+  //fn set_panel_width(&mut self, panel_width: f64);
 }

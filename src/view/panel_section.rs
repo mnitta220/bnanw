@@ -1,4 +1,4 @@
-use super::super::manager;
+//use super::super::manager;
 use super::super::model::token;
 use super::super::FuncType;
 use super::area;
@@ -18,7 +18,6 @@ pub struct PanelSection {
   pub cur_x: i32,
   pub cur_y: i32,
   pub start_time: f64,
-  pub touch1: f64,
   pub width: f64,
   pub height: f64,
   pub panel_width: f64,
@@ -30,6 +29,7 @@ pub struct PanelSection {
 }
 
 impl panel::Panel for PanelSection {
+  /*
   fn new(mgr: &manager::Manager) -> Self {
     //log!("***PanelSection.new");
 
@@ -43,7 +43,6 @@ impl panel::Panel for PanelSection {
       cur_x: 0,
       cur_y: 0,
       start_time: 0.0,
-      touch1: 0.0,
       width: 0.0,
       height: 0.0,
       panel_width: 0.0,
@@ -67,6 +66,32 @@ impl panel::Panel for PanelSection {
       ps.width = cv.width;
       ps.height = cv.height;
     }
+
+    ps
+  }
+  */
+  fn new() -> Self {
+    //log!("***PanelSection.new");
+
+    let ps = PanelSection {
+      is_vertical: false,
+      font_size: 0,
+      pos: 0.0,
+      touching: false,
+      start_x: 0,
+      start_y: 0,
+      cur_x: 0,
+      cur_y: 0,
+      start_time: 0.0,
+      width: 0.0,
+      height: 0.0,
+      panel_width: 0.0,
+      black_source: 0,
+      black_token: 0,
+      scroll_bar: None,
+      plines: Vec::new(),
+      areas: Vec::new(),
+    };
 
     ps
   }
@@ -328,7 +353,7 @@ impl panel::Panel for PanelSection {
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
     //log!("***PanelSection.touch_end");
-    let mut ret: isize = -3;
+    let ret: isize = -3;
     let mut is_sb: bool = false;
 
     match &mut self.scroll_bar {
@@ -376,30 +401,6 @@ impl panel::Panel for PanelSection {
 
       if self.touching {
         self.pos += diff3 as f64;
-        let now = js_sys::Date::now();
-        let diff1 = now - self.start_time;
-
-        if diff1 < 500.0 {
-          let diff2 = now - self.touch1;
-
-          if diff2 < 800.0 {
-            // double click
-            if let Err(e) = self.dbl_click() {
-              return Err(e);
-            }
-
-            ret = -2;
-            self.touch1 = 0.0;
-          }
-        }
-
-        if ret == -3 {
-          self.touch1 = now;
-        }
-      }
-
-      if diff3 > 10 {
-        self.touch1 = 0.0;
       }
     }
 
@@ -407,27 +408,35 @@ impl panel::Panel for PanelSection {
 
     Ok(ret)
   }
+}
 
-  /*
-  /// クリック
-  fn click(&mut self) -> Result<isize, &'static str> {
-    let mut ret: isize = 0;
-    let now = js_sys::Date::now();
-    let diff_t = now - self.touch1;
-    self.touch1 = 0.0;
-    let diff_x = (self.cur_x - self.start_x).abs();
-    let diff_y = (self.cur_y - self.start_y).abs();
+impl PanelSection {
+  pub fn set_manager(
+    &mut self,
+    is_vertical: bool,
+    font_size: isize,
+    canvas: &Option<canvas::Canvas>,
+  ) {
+    self.is_vertical = is_vertical;
+    self.font_size = font_size;
 
-    if diff_t < 1_500.0 && diff_x < 10 && diff_y < 10 {
-      ret = 1;
+    if let Some(cv) = &canvas {
+      let scroll_bar;
+
+      if is_vertical {
+        scroll_bar = scroll_bar::ScrollBar::new(true, 1.0, cv.height - 10.0, cv.width - 2.0);
+      } else {
+        scroll_bar = scroll_bar::ScrollBar::new(false, cv.width - 10.0, 1.0, cv.height - 2.0);
+      }
+
+      self.scroll_bar = Some(scroll_bar);
+      self.width = cv.width;
+      self.height = cv.height;
     }
-
-    Ok(ret)
   }
-  */
 
   /// 行数カウント
-  fn count_lines(&self) -> usize {
+  pub fn count_lines(&self) -> usize {
     let mut c: usize = 0;
 
     for l in &self.plines {
@@ -442,25 +451,33 @@ impl panel::Panel for PanelSection {
   }
 
   /// パネル幅設定
-  fn set_panel_width(&mut self, panel_width: f64) {
+  pub fn set_panel_width(&mut self, panel_width: f64) {
     self.panel_width = panel_width;
 
     if let Some(s) = &mut self.scroll_bar {
       s.panel_width = panel_width;
     }
   }
-}
 
-impl PanelSection {
   /// シングルクリック
   pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    log!("***PanelSection.single_click: x={} y={}", x, y);
+    //log!("***PanelSection.single_click: x={} y={}", x, y);
+    self.cur_x = x;
+    self.cur_y = y;
     Ok(0)
   }
 
   /// ダブルクリック
   pub fn double_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    log!("***PanelSection.double_click: x={} y={}", x, y);
+    //log!("***PanelSection.double_click: x={} y={}", x, y);
+    self.cur_x = x;
+    self.cur_y = y;
+    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
+
+    if source >= 0 {
+      self.black_source = source;
+      self.black_token = token;
+    }
     Ok(0)
   }
 
@@ -848,19 +865,6 @@ impl PanelSection {
       }
 
       _ => {}
-    }
-
-    Ok(0)
-  }
-
-  /// ダブルクリック
-  fn dbl_click(&mut self) -> Result<isize, &'static str> {
-    //log!("***PanelSection.dbl_click");
-    let (source, token) = area::Area::touch_pos(&self.areas, self.cur_x as f64, self.cur_y as f64);
-
-    if source >= 0 {
-      self.black_source = source;
-      self.black_token = token;
     }
 
     Ok(0)

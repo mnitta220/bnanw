@@ -25,9 +25,7 @@ pub struct Manager {
   pub pbd: Option<view::panel_board::PanelBoard>,
   pub tree: Option<super::model::contents::ContentTree>,
   pub canvas: Option<view::canvas::Canvas>,
-  //pub click_handle: Vec<super::click::ClickHandle>,
   pub font_loaded: bool,
-  //pub is_dblclick: bool,
 }
 
 impl Manager {
@@ -50,9 +48,7 @@ impl Manager {
       pbd: None,
       tree: None,
       canvas: None,
-      //click_handle: Vec::new(),
       font_loaded: false,
-      //is_dblclick: false,
     }
   }
 
@@ -88,22 +84,21 @@ impl Manager {
     self.sources.clear();
     self.contents.clear();
     self.canvas = None;
-    self.pcon = None;
-    self.psec = None;
+    //self.pcon = None;
+    //self.psec = None;
     self.pbox = None;
-    self.pbd = None;
+    //self.pbd = None;
+    self.pcon = Some(view::panel_contents::PanelContents::new());
+    self.psec = Some(view::panel_section::PanelSection::new());
+    self.pbd = Some(view::panel_board::PanelBoard::new());
 
     Ok(0)
   }
 
   /// 段落をセットする
-  pub fn set_section(
-    &mut self,
-    current: isize,
-  ) -> Result<isize, &'static str> {
-    //log!("***Manager.set_doc: id={} current={}", id, current);
+  pub fn set_section(&mut self, current: isize) -> Result<isize, &'static str> {
+    //log!("***Manager.set_section: current={}", current);
     self.tab = TabType::TabText;
-    //self.is_black = false;
     self.section = current;
     self.sources.clear();
     self.contents.clear();
@@ -130,7 +125,6 @@ impl Manager {
     //log!("***Manager.build_tree");
     self.tree = Some(super::model::contents::ContentTree::build(&self));
     self.pbox = Some(view::panel_box::PanelBox::new(&self));
-    //a
     Ok(0)
   }
 
@@ -187,16 +181,30 @@ impl Manager {
     );
 
     self.canvas = Some(cv);
+    if let Some(pc) = &mut self.pcon {
+      pc.set_manager(
+        self.is_vertical,
+        self.font_size,
+        &self.canvas,
+        &self.contents,
+        &self.sources,
+      );
+    }
+    if let Some(ps) = &mut self.psec {
+      ps.set_manager(self.is_vertical, self.font_size, &self.canvas);
+    }
+    if let Some(pb) = &mut self.pbd {
+      pb.set_manager(&self.canvas);
+    }
+    /*
     self.pcon = Some(view::panel_contents::PanelContents::new(&self));
     self.psec = Some(view::panel_section::PanelSection::new(&self));
-    //self.pbox = Some(view::panel_box::PanelBox::new(&self));
     self.pbd = Some(view::panel_board::PanelBoard::new(&self));
+    */
 
     if let Err(e) = self.change_section(self.section) {
       return Err(e);
     }
-
-    //self.click_handle.clear();
 
     if let Err(e) = self.draw() {
       return Err(e);
@@ -246,6 +254,7 @@ impl Manager {
     );
 
     self.canvas = Some(cv);
+    /*
     let mut pos: f64 = 0.0;
 
     if let Some(pc) = &self.pcon {
@@ -268,18 +277,19 @@ impl Manager {
 
     let ps = view::panel_section::PanelSection::new(&self);
     self.psec = Some(ps);
+    */
 
     if let Err(e) = self.change_section(self.section) {
       return Err(e);
     }
 
+    /*
     if let Some(ps) = &mut self.psec {
       ps.pos = pos;
       ps.black_source = black_source;
       ps.black_token = black_token;
     }
-
-    //self.click_handle.clear();
+    */
 
     if let Err(e) = self.draw() {
       return Err(e);
@@ -359,7 +369,6 @@ impl Manager {
     //log!("***Manager.draw");
     match self.tab {
       TabType::TabContents => {
-        //log!("***Manager.draw TabContents");
         if let Some(pc) = &mut self.pcon {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -376,7 +385,6 @@ impl Manager {
         }
       }
       TabType::TabText => {
-        //log!("***Manager.draw TabText");
         if let Some(ps) = &mut self.psec {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
@@ -393,7 +401,6 @@ impl Manager {
         }
       }
       TabType::TabBox => {
-        //log!("***Manager.draw TabBox");
         if let Some(bx) = &mut self.pbox {
           if let Some(tr) = &mut self.tree {
             if let Some(cv) = &self.canvas {
@@ -412,7 +419,6 @@ impl Manager {
         }
       }
       TabType::TabBoard => {
-        //log!("***Manager.draw TabBoard");
         if let Some(bd) = &mut self.pbd {
           if let Some(cv) = &self.canvas {
             if let Err(e) = bd.draw(&cv, self.is_dark) {
@@ -433,12 +439,6 @@ impl Manager {
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
-          //if self.click_handle.len() == 0 {
-          //self.is_dblclick = false;
-          //}
-          //let handle = super::click_handle();
-          //self.click_handle.push(handle);
-
           if let Err(e) = pc.touch_start(x, y) {
             return Err(e);
           }
@@ -446,9 +446,6 @@ impl Manager {
       }
       TabType::TabText => {
         if let Some(ps) = &mut self.psec {
-          //let handle = super::click_handle();
-          //self.click_handle.push(handle);
-
           if let Err(e) = ps.touch_start(x, y) {
             return Err(e);
           }
@@ -456,9 +453,6 @@ impl Manager {
       }
       TabType::TabBox => {
         if let Some(bx) = &mut self.pbox {
-          //let handle = super::click_handle();
-          //self.click_handle.push(handle);
-
           if let Err(e) = bx.touch_start(x, y) {
             return Err(e);
           }
@@ -563,12 +557,6 @@ impl Manager {
         if let Some(pc) = &mut self.pcon {
           match pc.touch_end() {
             Ok(r) => {
-              if self.is_black_contents && r == -2 {
-                //self.is_dblclick = true;
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              }
               if r > -2 {
                 ret = r;
               }
@@ -583,16 +571,8 @@ impl Manager {
 
       TabType::TabText => {
         if let Some(ps) = &mut self.psec {
-          match ps.touch_end() {
-            Ok(r) => {
-              if self.is_black_text && r == -2 {
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              }
-            }
-
-            Err(e) => return Err(e),
+          if let Err(e) = ps.touch_end() {
+            return Err(e);
           }
         }
       }
@@ -624,76 +604,6 @@ impl Manager {
 
     Ok(ret)
   }
-
-  /*
-  /// クリック
-  pub fn click(&mut self) -> Result<isize, &'static str> {
-    log!("***clicked!");
-
-    match self.tab {
-      TabType::TabContents => {
-        if let Some(pc) = &mut self.pcon {
-          //if self.is_dblclick {
-          //  return Ok(0);
-          //}
-          match pc.click() {
-            Ok(r) => {
-              if r == 1 {
-                if let Err(e) = self.tool_func(FuncType::FdSlash) {
-                  return Err(e);
-                }
-              }
-            }
-
-            Err(e) => {
-              return Err(e);
-            }
-          }
-        }
-      }
-
-      TabType::TabText => {
-        if let Some(ps) = &mut self.psec {
-          match ps.click() {
-            Ok(r) => {
-              if r == 1 {
-                if let Err(e) = self.tool_func(FuncType::FdSlash) {
-                  return Err(e);
-                }
-              }
-            }
-
-            Err(e) => {
-              return Err(e);
-            }
-          }
-        }
-      }
-
-      TabType::TabBox => {
-        if let Some(bx) = &mut self.pbox {
-          match bx.click() {
-            Ok(r) => {
-              if r == 1 {
-                if let Err(e) = self.tool_func(FuncType::FdSlash) {
-                  return Err(e);
-                }
-              }
-            }
-
-            Err(e) => {
-              return Err(e);
-            }
-          }
-        }
-      }
-
-      TabType::TabBoard => {}
-    }
-
-    Ok(0)
-  }
-  */
 
   /// シングルクリック
   pub fn single_click(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
@@ -742,6 +652,12 @@ impl Manager {
           match pc.double_click(x, y) {
             Ok(r) => {
               ret = r;
+
+              if self.is_black_contents {
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
             }
 
             Err(e) => {
@@ -755,6 +671,12 @@ impl Manager {
           match ps.double_click(x, y) {
             Ok(r) => {
               ret = r;
+
+              if self.is_black_text {
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
             }
 
             Err(e) => {
@@ -863,7 +785,6 @@ impl Manager {
           FuncType::FdSec => {
             if self.section == DOC_TOP {
               if self.contents.len() > 0 {
-                //log!("***next section={}", self.sources[self.contents[0]].seq);
                 if let Err(e) = self.change_section(self.sources[self.contents[0]].seq as isize) {
                   return Err(e);
                 }
@@ -951,7 +872,6 @@ impl Manager {
               if sec == -1 {
                 sec = DOC_TOP;
               }
-              //log!("***next section={}", sec);
               if let Err(e) = self.change_section(sec) {
                 return Err(e);
               }

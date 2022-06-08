@@ -1,18 +1,14 @@
 #[macro_use]
 mod util;
 
-//mod click;
 mod manager;
 mod model;
 mod view;
 
-//use core::num;
 use std::cell::RefCell;
-//use std::time::Duration;
 use strum_macros::Display;
 use wasm_bindgen::prelude::*;
 use web_sys::FontFace;
-//use wasm_timer::Delay;
 
 // ツールボタン操作タイプ
 #[derive(Display, Debug)]
@@ -33,6 +29,7 @@ pub enum FuncType {
   BkSec,
 }
 
+#[derive(Display, Debug)]
 pub enum TabType {
   // 本文
   TabText,
@@ -62,32 +59,6 @@ extern "C" {
   fn alert(s: &str);
   fn setTimeout(closure: &Closure<dyn FnMut()>, time: u32) -> i32;
 }
-
-/*
-pub fn click_handle() -> click::ClickHandle {
-  let cb = Closure::wrap(Box::new(|| {
-    log!("timeout elapsed!");
-    MANAGER.with(|mg| match mg.try_borrow_mut() {
-      Ok(mut m) => match m.click() {
-        Ok(t) => t,
-
-        Err(_) => 1,
-      },
-
-      Err(_) => 1,
-    });
-  }) as Box<dyn FnMut()>);
-
-  // 600ミリ秒後にクロージャーにラップされたクリックイベントを発生させる。
-  // ダブルクリックが発生していなければシングルクリック処理を行う。
-  let id = setTimeout(&cb, 600);
-
-  click::ClickHandle {
-    id: id,
-    closure: cb,
-  }
-}
-*/
 
 /// 起動時処理
 #[wasm_bindgen(start)]
@@ -230,21 +201,14 @@ pub fn set_doc(
 /// なし
 ///
 #[wasm_bindgen]
-pub fn set_section(
-  current: isize,
-) -> Result<(), JsValue> {
+pub fn set_section(current: isize) -> Result<(), JsValue> {
   //log!("***set_section: current={}", current);
-  if let Err(e1) = MANAGER.with(|mg| {
-    match mg
-      .borrow_mut()
-      .set_section(current)
-    {
-      Err(e) => {
-        return Err(JsValue::from_str(&format!("set_section failed!: {}", e)));
-      }
-
-      _ => Ok(()),
+  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().set_section(current) {
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("set_section failed!: {}", e)));
     }
+
+    _ => Ok(()),
   }) {
     return Err(JsValue::from_str(&format!("set_section failed!: {:?}", e1)));
   }
@@ -541,7 +505,7 @@ pub fn touch_end() -> Result<isize, JsValue> {
 ///
 #[wasm_bindgen]
 pub fn single_click(x: i32, y: i32) -> Result<isize, JsValue> {
-  log!("***single_click: x={} y={}", x, y);
+  //log!("***single_click: x={} y={}", x, y);
   let mut ret: isize = -3;
 
   if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
@@ -561,7 +525,10 @@ pub fn single_click(x: i32, y: i32) -> Result<isize, JsValue> {
       return Err(JsValue::from_str(&format!("single_click failed!: {}", e)));
     }
   }) {
-    return Err(JsValue::from_str(&format!("single_click failed!: {:?}", e1)));
+    return Err(JsValue::from_str(&format!(
+      "single_click failed!: {:?}",
+      e1
+    )));
   }
 
   Ok(ret)
@@ -581,7 +548,7 @@ pub fn single_click(x: i32, y: i32) -> Result<isize, JsValue> {
 ///
 #[wasm_bindgen]
 pub fn double_click(x: i32, y: i32) -> Result<isize, JsValue> {
-  log!("***double_click: x={} y={}", x, y);
+  //log!("***double_click: x={} y={}", x, y);
   let mut ret: isize = -3;
 
   if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
@@ -601,21 +568,14 @@ pub fn double_click(x: i32, y: i32) -> Result<isize, JsValue> {
       return Err(JsValue::from_str(&format!("double_click failed!: {}", e)));
     }
   }) {
-    return Err(JsValue::from_str(&format!("double_click failed!: {:?}", e1)));
+    return Err(JsValue::from_str(&format!(
+      "double_click failed!: {:?}",
+      e1
+    )));
   }
 
   Ok(ret)
 }
-
-/*
-#[wasm_bindgen]
-pub async fn sleep_millis(numbers: u16) -> js_sys::Promise {
-  let millis: u64 = u64::from(numbers);
-  Delay::new(Duration::from_millis(millis)).await.unwrap();
-  let promise = js_sys::Promise::resolve(&numbers.into());
-  return promise;
-}
-*/
 
 /// 黒塗りモードを変更する
 ///
