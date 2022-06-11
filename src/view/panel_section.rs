@@ -1,4 +1,3 @@
-//use super::super::manager;
 use super::super::model::token;
 use super::super::FuncType;
 use super::area;
@@ -29,47 +28,6 @@ pub struct PanelSection {
 }
 
 impl panel::Panel for PanelSection {
-  /*
-  fn new(mgr: &manager::Manager) -> Self {
-    //log!("***PanelSection.new");
-
-    let mut ps = PanelSection {
-      is_vertical: mgr.is_vertical,
-      font_size: mgr.font_size,
-      pos: 0.0,
-      touching: false,
-      start_x: 0,
-      start_y: 0,
-      cur_x: 0,
-      cur_y: 0,
-      start_time: 0.0,
-      width: 0.0,
-      height: 0.0,
-      panel_width: 0.0,
-      black_source: 0,
-      black_token: 0,
-      scroll_bar: None,
-      plines: Vec::new(),
-      areas: Vec::new(),
-    };
-
-    if let Some(cv) = &mgr.canvas {
-      let scroll_bar;
-
-      if mgr.is_vertical {
-        scroll_bar = scroll_bar::ScrollBar::new(true, 1.0, cv.height - 10.0, cv.width - 2.0);
-      } else {
-        scroll_bar = scroll_bar::ScrollBar::new(false, cv.width - 10.0, 1.0, cv.height - 2.0);
-      }
-
-      ps.scroll_bar = Some(scroll_bar);
-      ps.width = cv.width;
-      ps.height = cv.height;
-    }
-
-    ps
-  }
-  */
   fn new() -> Self {
     //log!("***PanelSection.new");
 
@@ -105,7 +63,8 @@ impl panel::Panel for PanelSection {
   ) -> Result<isize, &'static str> {
     /*
     log!(
-      "***PanelSection.draw: self.black_source={} self.black_token={}",
+      "***PanelSection.draw: self.pos={} self.black_source={} self.black_token={}",
+      self.pos,
       self.black_source,
       self.black_token
     );

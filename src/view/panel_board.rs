@@ -1,4 +1,3 @@
-//use super::super::manager;
 use super::super::model::stroke;
 use super::canvas;
 use wasm_bindgen::prelude::*;
@@ -11,23 +10,6 @@ pub struct PanelBoard {
 }
 
 impl PanelBoard {
-  /*
-  pub fn new(mgr: &manager::Manager) -> Self {
-    let mut pb = PanelBoard {
-      width: 0.0,
-      height: 0.0,
-      touching: false,
-      strokes: Vec::new(),
-    };
-
-    if let Some(cv) = &mgr.canvas {
-      pb.width = cv.width;
-      pb.height = cv.height;
-    }
-
-    pb
-  }
-  */
   pub fn new() -> Self {
     let pb = PanelBoard {
       width: 0.0,

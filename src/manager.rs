@@ -26,6 +26,8 @@ pub struct Manager {
   pub tree: Option<super::model::contents::ContentTree>,
   pub canvas: Option<view::canvas::Canvas>,
   pub font_loaded: bool,
+  pub width: i32,
+  pub height: i32,
 }
 
 impl Manager {
@@ -49,6 +51,8 @@ impl Manager {
       tree: None,
       canvas: None,
       font_loaded: false,
+      width: 0,
+      height: 0,
     }
   }
 
@@ -84,11 +88,13 @@ impl Manager {
     self.sources.clear();
     self.contents.clear();
     self.canvas = None;
-    //self.pcon = None;
-    //self.psec = None;
     self.pbox = None;
-    //self.pbd = None;
     self.pcon = Some(view::panel_contents::PanelContents::new());
+
+    if let Some(pc) = &mut self.pcon {
+      pc.black_source = current;
+    }
+
     self.psec = Some(view::panel_section::PanelSection::new());
     self.pbd = Some(view::panel_board::PanelBoard::new());
 
@@ -120,6 +126,48 @@ impl Manager {
     Ok(0)
   }
 
+  fn init_canvas(&mut self) -> Result<isize, &'static str> {
+    let canvas: web_sys::HtmlCanvasElement;
+    let context: web_sys::CanvasRenderingContext2d;
+
+    match util::get_canvas("ca1") {
+      Ok(c) => {
+        match util::get_context(&c) {
+          Ok(cn) => {
+            context = cn;
+          }
+
+          Err(_) => {
+            return Err("ERR_GET_CONTEXT");
+          }
+        }
+
+        canvas = c;
+
+        canvas.set_width(self.width as u32);
+        canvas.set_height(self.height as u32);
+      }
+
+      Err(_) => {
+        return Err("ERR_GET_CANVAS");
+      }
+    }
+
+    let cv = view::canvas::Canvas::new(
+      canvas,
+      context,
+      self.width,
+      self.height,
+      self.is_vertical,
+      self.font_size,
+      self.font_loaded,
+    );
+
+    self.canvas = Some(cv);
+
+    Ok(0)
+  }
+
   /// 文書ツリーを生成する
   pub fn build_tree(&mut self) -> Result<isize, &'static str> {
     //log!("***Manager.build_tree");
@@ -137,50 +185,20 @@ impl Manager {
     is_android: bool,
   ) -> Result<isize, &'static str> {
     //log!("***Manager.draw_doc");
+    self.width = width;
+    self.height = height;
+    self.is_dark = is_dark;
+
     if is_android {
       if self.font_loaded == false {
         return Err("ERR_GET_FONT");
       }
     }
 
-    let canvas: web_sys::HtmlCanvasElement;
-    let context: web_sys::CanvasRenderingContext2d;
-    self.is_dark = is_dark;
-
-    match util::get_canvas("ca1") {
-      Ok(c) => {
-        match util::get_context(&c) {
-          Ok(cn) => {
-            context = cn;
-          }
-
-          Err(_) => {
-            return Err("ERR_GET_CONTEXT");
-          }
-        }
-
-        canvas = c;
-
-        canvas.set_width(width as u32);
-        canvas.set_height(height as u32);
-      }
-
-      Err(_) => {
-        return Err("ERR_GET_CANVAS");
-      }
+    if let Err(e) = self.init_canvas() {
+      return Err(e);
     }
 
-    let cv = view::canvas::Canvas::new(
-      canvas,
-      context,
-      width,
-      height,
-      self.is_vertical,
-      self.font_size,
-      self.font_loaded,
-    );
-
-    self.canvas = Some(cv);
     if let Some(pc) = &mut self.pcon {
       pc.set_manager(
         self.is_vertical,
@@ -196,11 +214,6 @@ impl Manager {
     if let Some(pb) = &mut self.pbd {
       pb.set_manager(&self.canvas);
     }
-    /*
-    self.pcon = Some(view::panel_contents::PanelContents::new(&self));
-    self.psec = Some(view::panel_section::PanelSection::new(&self));
-    self.pbd = Some(view::panel_board::PanelBoard::new(&self));
-    */
 
     if let Err(e) = self.change_section(self.section) {
       return Err(e);
@@ -216,80 +229,13 @@ impl Manager {
   /// キャンバスサイズ変更
   pub fn resize(&mut self, width: i32, height: i32, is_dark: bool) -> Result<isize, &'static str> {
     //log!("***Manager.resize");
-    let canvas: web_sys::HtmlCanvasElement;
-    let context: web_sys::CanvasRenderingContext2d;
+    self.width = width;
+    self.height = height;
     self.is_dark = is_dark;
 
-    match util::get_canvas("ca1") {
-      Ok(c) => {
-        match util::get_context(&c) {
-          Ok(cn) => {
-            context = cn;
-          }
-
-          Err(e) => {
-            return Err(e);
-          }
-        }
-
-        canvas = c;
-
-        canvas.set_width(width as u32);
-        canvas.set_height(height as u32);
-      }
-
-      Err(e) => {
-        return Err(e);
-      }
-    }
-
-    let cv = view::canvas::Canvas::new(
-      canvas,
-      context,
-      width,
-      height,
-      self.is_vertical,
-      self.font_size,
-      self.font_loaded,
-    );
-
-    self.canvas = Some(cv);
-    /*
-    let mut pos: f64 = 0.0;
-
-    if let Some(pc) = &self.pcon {
-      pos = pc.pos;
-    }
-
-    let mut pc = view::panel_contents::PanelContents::new(&self);
-    pc.pos = pos;
-    self.pcon = Some(pc);
-
-    let mut pos: f64 = 0.0;
-    let mut black_source: isize = 0;
-    let mut black_token: isize = 0;
-
-    if let Some(ps) = &self.psec {
-      pos = ps.pos;
-      black_source = ps.black_source;
-      black_token = ps.black_token;
-    }
-
-    let ps = view::panel_section::PanelSection::new(&self);
-    self.psec = Some(ps);
-    */
-
-    if let Err(e) = self.change_section(self.section) {
+    if let Err(e) = self.init_canvas() {
       return Err(e);
     }
-
-    /*
-    if let Some(ps) = &mut self.psec {
-      ps.pos = pos;
-      ps.black_source = black_source;
-      ps.black_token = black_token;
-    }
-    */
 
     if let Err(e) = self.draw() {
       return Err(e);
@@ -367,6 +313,12 @@ impl Manager {
   /// 文書を表示する。
   fn draw(&mut self) -> Result<isize, &'static str> {
     //log!("***Manager.draw");
+    if self.canvas.is_none() {
+      if let Err(e) = self.init_canvas() {
+        return Err(e);
+      }
+    }
+
     match self.tab {
       TabType::TabContents => {
         if let Some(pc) = &mut self.pcon {
@@ -709,9 +661,13 @@ impl Manager {
 
   fn change_section(&mut self, section: isize) -> Result<isize, &'static str> {
     //log!("***Manager.change_section: section={}", section);
+    if self.canvas.is_none() {
+      if let Err(e) = self.init_canvas() {
+        return Err(e);
+      }
+    }
 
     if let Some(pc) = &mut self.pcon {
-      //pc.current = section;
       if let Some(cv) = &self.canvas {
         pc.set_current(section, &cv);
       }
@@ -778,6 +734,12 @@ impl Manager {
   /// ツールボタンの操作
   pub fn tool_func(&mut self, mt: FuncType) -> Result<isize, &'static str> {
     /* log!("***manager::tool_func mt={}", mt); */
+    if self.canvas.is_none() {
+      if let Err(e) = self.init_canvas() {
+        return Err(e);
+      }
+    }
+
     match self.tab {
       TabType::TabText => {
         match mt {

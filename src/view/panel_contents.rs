@@ -32,59 +32,6 @@ pub struct PanelContents {
 }
 
 impl panel::Panel for PanelContents {
-  /*
-  fn new(mgr: &manager::Manager) -> Self {
-    //log!("***PanelContents.new");
-
-    let mut pc = PanelContents {
-      is_vertical: mgr.is_vertical,
-      font_size: mgr.font_size,
-      pos: 0.0,
-      touching: false,
-      start_x: 0,
-      start_y: 0,
-      cur_x: 0,
-      cur_y: 0,
-      start_time: 0.0,
-      width: 0.0,
-      height: 0.0,
-      panel_width: 0.0,
-      current: manager::DOC_TOP,
-      black_source: -1,
-      black_token: 0,
-      scroll_bar: None,
-      plines: Vec::new(),
-      areas: Vec::new(),
-      is_black: false,
-    };
-
-    if let Some(cv) = &mgr.canvas {
-      let scroll_bar;
-
-      if mgr.is_vertical {
-        scroll_bar = scroll_bar::ScrollBar::new(true, 2.0, cv.height - 11.0, cv.width - 4.0);
-      } else {
-        scroll_bar = scroll_bar::ScrollBar::new(false, cv.width - 11.0, 2.0, cv.height - 4.0);
-      }
-
-      pc.scroll_bar = Some(scroll_bar);
-      let pl = panel_line::PanelLine::top(mgr.is_vertical);
-      pc.plines.push(pl);
-
-      for c in &mgr.contents {
-        let pl = panel_line::PanelLine::new(mgr.is_vertical, &mgr.sources[*c], &cv);
-        pc.plines.push(pl);
-      }
-
-      pc.width = cv.width;
-      pc.height = cv.height;
-      let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * (pc.count_lines() + 1) as f64;
-      pc.set_panel_width(panel_width);
-    }
-
-    pc
-  }
-  */
   fn new() -> Self {
     //log!("***PanelContents.new");
 
@@ -451,28 +398,6 @@ impl panel::Panel for PanelContents {
 
     Ok(ret)
   }
-
-  /*
-  /// 行数カウント
-  fn count_lines(&self) -> usize {
-    let mut c: usize = 0;
-
-    for l in &self.plines {
-      c += l.lines.len();
-    }
-
-    c
-  }
-
-  /// パネル幅設定
-  fn set_panel_width(&mut self, panel_width: f64) {
-    self.panel_width = panel_width;
-
-    if let Some(s) = &mut self.scroll_bar {
-      s.panel_width = panel_width;
-    }
-  }
-  */
 }
 
 impl PanelContents {
@@ -621,16 +546,22 @@ impl PanelContents {
             self.black_source = l.source + 1;
             self.black_token = 0;
           }
-          /*
-          match self.plines.last() {
-            Some(l) => {
-              self.black_source = l.source + 1;
-              self.black_token = 0;
-            }
+        }
 
-            _ => {}
+        let ai = self.area_index();
+
+        if ai > -1 {
+          let a = &self.areas[ai as usize];
+
+          if self.is_vertical {
+            if a.x1 < margin {
+              self.pos += margin - a.x1;
+            }
+          } else {
+            if a.y2 + margin > cv.height {
+              self.pos += cv.height - margin - a.y2;
+            }
           }
-          */
         }
       }
 

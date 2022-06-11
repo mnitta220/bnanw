@@ -668,16 +668,6 @@ impl PanelLine {
                 black = true;
               }
             }
-            /*
-            log!(
-              "***black={} self.source={} black_line={} t.seq={} black_token={}",
-              black,
-              self.source,
-              black_line,
-              t.seq,
-              black_token
-            );
-            */
 
             match t.ty {
               token::TokenType::Zenkaku
@@ -851,7 +841,9 @@ impl PanelLine {
                 if black == false {
                   cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
                   //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
-                  cv.context.fill_text(&t.word,  y + (cv.metr * 0.22), -x - (cv.metr * 0.22)).unwrap();
+                  cv.context
+                    .fill_text(&t.word, y + (cv.metr * 0.22), -x - (cv.metr * 0.22))
+                    .unwrap();
                   cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
                 }
 
@@ -1094,7 +1086,7 @@ impl PanelLine {
           for t in &l.ptokens {
             let mut black = false;
 
-            if is_black && is_contents == false && self.ty == 0 {
+            if is_black {
               if self.source > black_line || (self.source == black_line && t.seq >= black_token) {
                 black = true;
               }
