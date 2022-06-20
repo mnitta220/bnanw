@@ -200,6 +200,8 @@ impl Manager {
     }
 
     if let Some(pc) = &mut self.pcon {
+      pc.black_source = self.section;
+      pc.black_token = 0;
       pc.set_manager(
         self.is_vertical,
         self.font_size,
@@ -873,6 +875,15 @@ impl Manager {
                       if ps.pos > 0.0 {
                         ps.pos = 0.0;
                       }
+                    }
+                    match self.tab {
+                      TabType::TabContents => {
+                        if let Some(pc) = &mut self.pcon {
+                          pc.black_source = -1;
+                          pc.black_token = 0;
+                        }
+                      }
+                      _ => {}
                     }
 
                     if let Err(e) = self.draw() {

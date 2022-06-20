@@ -731,14 +731,28 @@ impl PanelContents {
 
       // 末尾に進む
       FuncType::FdBottom => {
-        self.black_source = 0;
-        self.black_token = 0;
-
         if let Some(l) = self.plines.last() {
-          self.black_source = l.source;
-          self.black_token = l.ptokens.len() as isize;
+          self.black_source = l.source + 1;
+          self.black_token = 0;
         }
 
+        let ai = self.area_index();
+
+        if ai > -1 {
+          let a = &self.areas[ai as usize];
+
+          if self.is_vertical {
+            if a.x1 < margin {
+              self.pos += margin - a.x1;
+            }
+          } else {
+            if a.y2 + margin > cv.height {
+              self.pos += cv.height - margin - a.y2;
+            }
+          }
+        }
+
+        /*
         if self.is_vertical {
           self.pos = self.panel_width - (self.width * 0.6);
 
@@ -752,12 +766,13 @@ impl PanelContents {
             self.pos = 0.0;
           }
         }
+        */
       }
 
       // 先頭に戻る
       FuncType::BkTop => {
         self.pos = 0.0;
-        self.black_source = 0;
+        self.black_source = -1;
         self.black_token = 0;
       }
 
