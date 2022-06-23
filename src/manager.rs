@@ -217,7 +217,7 @@ impl Manager {
       pb.set_manager(&self.canvas);
     }
 
-    if let Err(e) = self.change_section(self.section) {
+    if let Err(e) = self.change_section(self.section, true) {
       return Err(e);
     }
 
@@ -236,6 +236,28 @@ impl Manager {
     self.is_dark = is_dark;
 
     if let Err(e) = self.init_canvas() {
+      return Err(e);
+    }
+
+    if let Some(pc) = &mut self.pcon {
+      pc.black_source = self.section;
+      pc.black_token = 0;
+      pc.set_manager(
+        self.is_vertical,
+        self.font_size,
+        &self.canvas,
+        &self.contents,
+        &self.sources,
+      );
+    }
+    if let Some(ps) = &mut self.psec {
+      ps.set_manager(self.is_vertical, self.font_size, &self.canvas);
+    }
+    if let Some(pb) = &mut self.pbd {
+      pb.set_manager(&self.canvas);
+    }
+
+    if let Err(e) = self.change_section(self.section, false) {
       return Err(e);
     }
 
@@ -661,7 +683,7 @@ impl Manager {
     }
   }
 
-  fn change_section(&mut self, section: isize) -> Result<isize, &'static str> {
+  fn change_section(&mut self, section: isize, black_init: bool) -> Result<isize, &'static str> {
     //log!("***Manager.change_section: section={}", section);
     if self.canvas.is_none() {
       if let Err(e) = self.init_canvas() {
@@ -678,8 +700,10 @@ impl Manager {
     if let Some(ps) = &mut self.psec {
       ps.plines.clear();
 
-      ps.black_source = -1;
-      ps.black_token = 0;
+      if black_init {
+        ps.black_source = -1;
+        ps.black_token = 0;
+      }
 
       if let Some(cv) = &self.canvas {
         let mut ty: isize = 0;
@@ -727,7 +751,9 @@ impl Manager {
         return Err("ERR_GET_CANVAS");
       }
 
-      ps.pos = 0.0;
+      if black_init {
+        ps.pos = 0.0;
+      }
     }
 
     Ok(0)
@@ -749,7 +775,9 @@ impl Manager {
           FuncType::FdSec => {
             if self.section == DOC_TOP {
               if self.contents.len() > 0 {
-                if let Err(e) = self.change_section(self.sources[self.contents[0]].seq as isize) {
+                if let Err(e) =
+                  self.change_section(self.sources[self.contents[0]].seq as isize, true)
+                {
                   return Err(e);
                 }
                 if let Err(e) = self.draw() {
@@ -788,7 +816,7 @@ impl Manager {
               }
 
               if found2 {
-                if let Err(e) = self.change_section(sec) {
+                if let Err(e) = self.change_section(sec, true) {
                   return Err(e);
                 }
                 if let Err(e) = self.draw() {
@@ -836,7 +864,7 @@ impl Manager {
               if sec == -1 {
                 sec = DOC_TOP;
               }
-              if let Err(e) = self.change_section(sec) {
+              if let Err(e) = self.change_section(sec, true) {
                 return Err(e);
               }
               if let Err(e) = self.draw() {
@@ -876,6 +904,7 @@ impl Manager {
                         ps.pos = 0.0;
                       }
                     }
+                    /*
                     match self.tab {
                       TabType::TabContents => {
                         if let Some(pc) = &mut self.pcon {
@@ -885,6 +914,7 @@ impl Manager {
                       }
                       _ => {}
                     }
+                    */
 
                     if let Err(e) = self.draw() {
                       return Err(e);

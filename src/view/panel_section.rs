@@ -483,6 +483,28 @@ impl PanelSection {
                         // 次の文字が見つかった。
                         s = 3;
                       }
+                      token::TokenType::Slash => {
+                        // スラッシュが見つかった。
+                        self.black_source = pl.source;
+                        self.black_token = pt.seq;
+                        s = 4;
+                        let ai = self.area_index();
+
+                        if ai > -1 {
+                          let a = &self.areas[ai as usize];
+
+                          if self.is_vertical {
+                            if a.x1 < margin {
+                              self.pos += margin - a.x1;
+                            }
+                          } else {
+                            if a.y2 + margin > cv.height {
+                              self.pos += cv.height - margin - a.y2;
+                            }
+                          }
+                        }
+                        break;
+                      }
 
                       _ => {}
                     }
