@@ -551,29 +551,36 @@ impl PanelSection {
         }
 
         if s != 4 {
+          let mut jump = false;
           match self.plines.last() {
             Some(l) => {
-              self.black_source = l.source + 1;
+              if self.black_source != l.source + 1 {
+                self.black_source = l.source + 1;
+                jump = true;
+              }
             }
 
             _ => {
               self.black_source = 1;
+              jump = true;
             }
           }
 
-          self.black_token = 0;
-          let ai = self.area_index();
+          if jump {
+            self.black_token = 0;
+            let ai = self.area_index();
 
-          if ai > -1 {
-            let a = &self.areas[ai as usize];
+            if ai > -1 {
+              let a = &self.areas[ai as usize];
 
-            if self.is_vertical {
-              if a.x1 < margin {
-                self.pos += margin - a.x1;
-              }
-            } else {
-              if a.y2 + margin > cv.height {
-                self.pos += cv.height - margin - a.y2;
+              if self.is_vertical {
+                if a.x1 < margin {
+                  self.pos += margin - a.x1;
+                }
+              } else {
+                if a.y2 + margin > cv.height {
+                  self.pos += cv.height - margin - a.y2;
+                }
               }
             }
           }

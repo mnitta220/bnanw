@@ -773,6 +773,7 @@ impl Manager {
         match mt {
           // 次の段・節に進む
           FuncType::FdSec => {
+            /*
             if self.section == DOC_TOP {
               if self.contents.len() > 0 {
                 if let Err(e) =
@@ -824,10 +825,12 @@ impl Manager {
                 }
               }
             }
+            */
           }
 
           // 前の段・節に戻る
           FuncType::BkSec => {
+            /*
             if self.section != DOC_TOP {
               let mut i: isize = self.contents.len() as isize - 1;
               let mut sec: isize = -1;
@@ -871,6 +874,7 @@ impl Manager {
                 return Err(e);
               }
             }
+            */
           }
 
           _ => {
