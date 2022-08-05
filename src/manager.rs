@@ -18,6 +18,8 @@ pub struct Manager {
   pub is_black_text: bool,
   pub is_black_contents: bool,
   pub is_dark: bool,
+  pub is_hide_text: bool,
+  pub is_hide_contents: bool,
   pub section: isize,
   pub pcon: Option<view::panel_contents::PanelContents>,
   pub psec: Option<view::panel_section::PanelSection>,
@@ -43,6 +45,8 @@ impl Manager {
       is_black_text: false,
       is_black_contents: false,
       is_dark: false,
+      is_hide_text: false,
+      is_hide_contents: false,
       section: 0,
       pcon: None,
       psec: None,
@@ -349,7 +353,13 @@ impl Manager {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
 
-            if let Err(e) = pc.draw(&cv, &mut areas, self.is_black_contents, self.is_dark) {
+            if let Err(e) = pc.draw(
+              &cv,
+              &mut areas,
+              self.is_black_contents,
+              self.is_dark,
+              self.is_hide_contents,
+            ) {
               return Err(e);
             }
 
@@ -365,7 +375,13 @@ impl Manager {
           if let Some(cv) = &self.canvas {
             let mut areas: Vec<view::area::Area> = Vec::new();
 
-            if let Err(e) = ps.draw(&cv, &mut areas, self.is_black_text, self.is_dark) {
+            if let Err(e) = ps.draw(
+              &cv,
+              &mut areas,
+              self.is_black_text,
+              self.is_dark,
+              self.is_hide_text,
+            ) {
               return Err(e);
             }
 
@@ -772,109 +788,17 @@ impl Manager {
       TabType::TabText => {
         match mt {
           // 次の段・節に進む
-          FuncType::FdSec => {
-            /*
-            if self.section == DOC_TOP {
-              if self.contents.len() > 0 {
-                if let Err(e) =
-                  self.change_section(self.sources[self.contents[0]].seq as isize, true)
-                {
-                  return Err(e);
-                }
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              }
-            } else {
-              let mut i = 0;
-              let mut sec: isize = -1;
-              let mut found1 = false;
-              let mut found2 = false;
-              let mut ty = 0;
-              loop {
-                if i >= self.contents.len() {
-                  break;
-                }
-                if found1 {
-                  found2 = true;
-                  let sec2 = self.contents[i as usize] as isize;
-                  let ty2 = self.sources[sec2 as usize].ty;
-                  if (sec + 1) == sec2 && ty < ty2 {
-                    sec = sec2;
-                    ty = ty2;
-                  } else {
-                    sec = sec2;
-                    break;
-                  }
-                } else {
-                  if self.sources[self.contents[i]].seq == self.section {
-                    found1 = true;
-                    sec = self.contents[i as usize] as isize;
-                    ty = self.sources[sec as usize].ty;
-                  }
-                }
-                i += 1;
-              }
-
-              if found2 {
-                if let Err(e) = self.change_section(sec, true) {
-                  return Err(e);
-                }
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              }
-            }
-            */
-          }
+          FuncType::FdSec => {}
 
           // 前の段・節に戻る
-          FuncType::BkSec => {
-            /*
-            if self.section != DOC_TOP {
-              let mut i: isize = self.contents.len() as isize - 1;
-              let mut sec: isize = -1;
-              let mut found1 = false;
-              let mut found2 = false;
-              let mut ty = 0;
-              loop {
-                if i < 0 {
-                  break;
-                }
-                if found1 {
-                  if found2 {
-                    let sec2 = self.contents[i as usize] as isize;
-                    let ty2 = self.sources[sec2 as usize].ty;
-                    if (sec2 + 1) == sec && ty > ty2 {
-                      sec = sec2;
-                      ty = ty2;
-                    } else {
-                      break;
-                    }
-                  } else {
-                    found2 = true;
-                    sec = self.contents[i as usize] as isize;
-                    ty = self.sources[sec as usize].ty;
-                  }
-                } else {
-                  if self.sources[self.contents[i as usize]].seq == self.section {
-                    found1 = true;
-                  }
-                }
-                i -= 1;
-              }
+          FuncType::BkSec => {}
 
-              if sec == -1 {
-                sec = DOC_TOP;
-              }
-              if let Err(e) = self.change_section(sec, true) {
-                return Err(e);
-              }
-              if let Err(e) = self.draw() {
-                return Err(e);
-              }
+          // 非表示
+          FuncType::Hide => {
+            self.is_hide_text = !self.is_hide_text;
+            if let Err(e) = self.draw() {
+              return Err(e);
             }
-            */
           }
 
           _ => {
@@ -908,17 +832,6 @@ impl Manager {
                         ps.pos = 0.0;
                       }
                     }
-                    /*
-                    match self.tab {
-                      TabType::TabContents => {
-                        if let Some(pc) = &mut self.pcon {
-                          pc.black_source = -1;
-                          pc.black_token = 0;
-                        }
-                      }
-                      _ => {}
-                    }
-                    */
 
                     if let Err(e) = self.draw() {
                       return Err(e);
@@ -943,17 +856,29 @@ impl Manager {
       }
 
       TabType::TabContents => {
-        if let Some(pc) = &mut self.pcon {
-          if let Some(cv) = &self.canvas {
-            if let Err(e) = pc.tool_func(mt, &cv) {
-              return Err(e);
-            }
-
+        match mt {
+          // 非表示
+          FuncType::Hide => {
+            self.is_hide_contents = !self.is_hide_contents;
             if let Err(e) = self.draw() {
               return Err(e);
             }
-          } else {
-            return Err("ERR_GET_CANVAS");
+          }
+
+          _ => {
+            if let Some(pc) = &mut self.pcon {
+              if let Some(cv) = &self.canvas {
+                if let Err(e) = pc.tool_func(mt, &cv) {
+                  return Err(e);
+                }
+
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              } else {
+                return Err("ERR_GET_CANVAS");
+              }
+            }
           }
         }
       }

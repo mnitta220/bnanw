@@ -27,6 +27,8 @@ pub enum FuncType {
   FdSec,
   // 前の段・節に戻る
   BkSec,
+  // 非表示
+  Hide,
 }
 
 #[derive(Display, Debug)]
@@ -619,9 +621,10 @@ pub fn mode_change(black: bool) -> Result<(), JsValue> {
 /// なし
 ///
 #[wasm_bindgen]
-pub fn tool_func(step: i32) -> Result<(), JsValue> {
+pub fn tool_func(step: i32) -> Result<isize, JsValue> {
   //log!("***tool_func {}", step);
   let mt: FuncType;
+  let mut ret: isize = -3;
 
   match step {
     1 => mt = FuncType::FdSlash,
@@ -631,25 +634,50 @@ pub fn tool_func(step: i32) -> Result<(), JsValue> {
     5 => mt = FuncType::BkTop,
     6 => mt = FuncType::FdSec,
     7 => mt = FuncType::BkSec,
+    8 => mt = FuncType::Hide,
     _ => {
       return Err(JsValue::from_str(&format!(
-        "black_step invalid step:{}",
+        "tool_func invalid step:{}",
         step
       )));
     }
   }
 
+  /*
   if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().tool_func(mt) {
     Err(e) => {
-      return Err(JsValue::from_str(&format!("black_step failed!: {}", e)));
+      return Err(JsValue::from_str(&format!("tool_func failed!: {}", e)));
     }
 
     _ => Ok(()),
   }) {
-    return Err(JsValue::from_str(&format!("black_step failed!: {:?}", e1)));
+    return Err(JsValue::from_str(&format!("tool_func failed!: {:?}", e1)));
+  }
+  */
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
+    Ok(mut m) => match m.tool_func(mt) {
+      Ok(r) => {
+        ret = r;
+
+        Ok(ret)
+      }
+
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("tool_func failed!: {}", e)));
+      }
+    },
+
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("tool_func failed!: {}", e)));
+    }
+  }) {
+    return Err(JsValue::from_str(&format!("tool_func failed!: {:?}", e1)));
   }
 
-  Ok(())
+  Ok(ret)
+
+  //Ok(())
 }
 
 /// 白板・戻る

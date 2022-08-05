@@ -60,13 +60,14 @@ impl panel::Panel for PanelSection {
     areas: &mut Vec<area::Area>,
     is_black: bool,
     is_dark: bool,
+    is_hide: bool,
   ) -> Result<isize, &'static str> {
     /*
     log!(
-      "***PanelSection.draw: self.pos={} self.black_source={} self.black_token={}",
-      self.pos,
-      self.black_source,
-      self.black_token
+      "***PanelSection.draw: is_black={} is_dark={} is_hide={}",
+      is_black,
+      is_dark,
+      is_hide
     );
     */
 
@@ -75,7 +76,7 @@ impl panel::Panel for PanelSection {
     if let Some(sb) = &mut self.scroll_bar {
       let mut diff: f64 = 0.0;
 
-      if self.is_vertical {
+      if self.is_vertical || is_black {
         let mut x = self.pos + cv.x2 - cv.met - cv.ruby_w;
 
         if sb.bar_touching {
@@ -84,26 +85,28 @@ impl panel::Panel for PanelSection {
           diff = (self.cur_x - self.start_x) as f64;
         }
 
-        x += diff;
+        if is_hide == false || is_black {
+          x += diff;
 
-        for l in &self.plines {
-          match l.draw_line(
-            x,
-            self.font_size,
-            cv,
-            areas,
-            self.black_source,
-            self.black_token,
-            false,
-            is_black,
-            false,
-            false,
-            is_dark,
-          ) {
-            Ok(r) => x = r,
+          for l in &self.plines {
+            match l.draw_line(
+              x,
+              self.font_size,
+              cv,
+              areas,
+              self.black_source,
+              self.black_token,
+              false,
+              is_black,
+              false,
+              false,
+              is_dark,
+            ) {
+              Ok(r) => x = r,
 
-            Err(e) => {
-              return Err(e);
+              Err(e) => {
+                return Err(e);
+              }
             }
           }
         }
@@ -116,26 +119,28 @@ impl panel::Panel for PanelSection {
           diff = (self.cur_y - self.start_y) as f64;
         }
 
-        y += diff;
+        if is_hide == false || is_black {
+          y += diff;
 
-        for l in &self.plines {
-          match l.draw_line(
-            y,
-            self.font_size,
-            cv,
-            areas,
-            self.black_source,
-            self.black_token,
-            false,
-            is_black,
-            false,
-            false,
-            is_dark,
-          ) {
-            Ok(r) => y = r,
+          for l in &self.plines {
+            match l.draw_line(
+              y,
+              self.font_size,
+              cv,
+              areas,
+              self.black_source,
+              self.black_token,
+              false,
+              is_black,
+              false,
+              false,
+              is_dark,
+            ) {
+              Ok(r) => y = r,
 
-            Err(e) => {
-              return Err(e);
+              Err(e) => {
+                return Err(e);
+              }
             }
           }
         }

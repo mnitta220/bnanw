@@ -11,6 +11,7 @@ pub trait Panel {
     areas: &mut Vec<area::Area>,
     is_black: bool,
     is_dark: bool,
+    is_hide: bool,
   ) -> Result<isize, &'static str>;
 
   /// タッチ開始
