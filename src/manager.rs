@@ -817,6 +817,60 @@ impl Manager {
                 }
               } else {
                 match mt {
+                  // 1ページ進む
+                  FuncType::FdSlash => {
+                    if let Some(cv) = &self.canvas {
+                      if self.is_vertical {
+                        ps.pos = ps.pos + ps.width;
+                        let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
+                        ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
+
+                        //if ps.pos < 0.0 {
+                        //  ps.pos = 0.0;
+                        //}
+                      } else {
+                        ps.pos = ps.pos + ps.height;
+
+                        if ps.pos > 0.0 {
+                          ps.pos = 0.0;
+                        }
+                      }
+
+                      if let Err(e) = self.draw() {
+                        return Err(e);
+                      }
+                    } else {
+                      return Err("ERR_GET_CANVAS");
+                    }
+                  }
+
+                  // 1ページ戻る
+                  FuncType::BkSlash => {
+                    if let Some(cv) = &self.canvas {
+                      if self.is_vertical {
+                        ps.pos = ps.pos - ps.width;
+                        let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
+                        ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
+
+                        if ps.pos < 0.0 {
+                          ps.pos = 0.0;
+                        }
+                      } else {
+                        ps.pos = ps.pos - ps.height;
+
+                        if ps.pos > 0.0 {
+                          ps.pos = 0.0;
+                        }
+                      }
+
+                      if let Err(e) = self.draw() {
+                        return Err(e);
+                      }
+                    } else {
+                      return Err("ERR_GET_CANVAS");
+                    }
+                  }
+
                   // 末尾に進む
                   FuncType::FdBottom => {
                     if self.is_vertical {

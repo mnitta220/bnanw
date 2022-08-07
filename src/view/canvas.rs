@@ -59,17 +59,19 @@ impl Canvas {
     let padding: f64 = 10.0;
     let x1: f64 = padding;
     let y1: f64 = padding;
-    let mut x2: f64 = w as f64 - padding;
-    let mut y2: f64 = h as f64 - padding;
+    let mut x2: f64 = w - padding;
+    let mut y2: f64 = h - padding;
+    let ruby_w = met / 3.0;
+    //let line_margin: f64 = met * 0.39;
+    let mut line_margin: f64 = met * 0.39;
 
     if is_vertical {
       y2 -= padding;
+      let c = (w / (met * 1.72)) as i32;
+      line_margin = (w - (met + ruby_w) * (c as f64)) / (c as f64);
     } else {
       x2 -= padding;
     }
-
-    let ruby_w = met / 3.0;
-    let line_margin: f64 = met * 0.39;
 
     Canvas {
       canvas: canvas,
