@@ -67,6 +67,7 @@ impl Canvas {
 
     if is_vertical {
       y2 -= padding;
+      //let w2 = x2 - x1;
       let c = (w / (met * 1.72)) as i32;
       line_margin = (w - (met + ruby_w) * (c as f64)) / (c as f64);
     } else {

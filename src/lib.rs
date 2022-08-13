@@ -27,8 +27,6 @@ pub enum FuncType {
   FdSec,
   // 前の段・節に戻る
   BkSec,
-  // 非表示
-  Hide,
 }
 
 #[derive(Display, Debug)]
@@ -634,7 +632,6 @@ pub fn tool_func(step: i32) -> Result<isize, JsValue> {
     5 => mt = FuncType::BkTop,
     6 => mt = FuncType::FdSec,
     7 => mt = FuncType::BkSec,
-    8 => mt = FuncType::Hide,
     _ => {
       return Err(JsValue::from_str(&format!(
         "tool_func invalid step:{}",
@@ -642,18 +639,6 @@ pub fn tool_func(step: i32) -> Result<isize, JsValue> {
       )));
     }
   }
-
-  /*
-  if let Err(e1) = MANAGER.with(|mg| match mg.borrow_mut().tool_func(mt) {
-    Err(e) => {
-      return Err(JsValue::from_str(&format!("tool_func failed!: {}", e)));
-    }
-
-    _ => Ok(()),
-  }) {
-    return Err(JsValue::from_str(&format!("tool_func failed!: {:?}", e1)));
-  }
-  */
 
   if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
     Ok(mut m) => match m.tool_func(mt) {
@@ -676,8 +661,45 @@ pub fn tool_func(step: i32) -> Result<isize, JsValue> {
   }
 
   Ok(ret)
+}
 
-  //Ok(())
+/// 表示/非表示を切り替える
+///
+/// # 引数
+///
+/// ## is_hide
+/// - 1 : 非表示
+/// - 0 : 表示
+///
+/// # 戻り値
+/// なし
+///
+#[wasm_bindgen]
+pub fn hide(is_hide: i32) -> Result<isize, JsValue> {
+  log!("***hide {}", is_hide);
+  let mut ret: isize = -3;
+
+  if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {
+    Ok(mut m) => match m.hide(if is_hide == 0 { false } else { true }) {
+      Ok(r) => {
+        ret = r;
+
+        Ok(ret)
+      }
+
+      Err(e) => {
+        return Err(JsValue::from_str(&format!("hide failed!: {}", e)));
+      }
+    },
+
+    Err(e) => {
+      return Err(JsValue::from_str(&format!("hide failed!: {}", e)));
+    }
+  }) {
+    return Err(JsValue::from_str(&format!("hide failed!: {:?}", e1)));
+  }
+
+  Ok(ret)
 }
 
 /// 白板・戻る

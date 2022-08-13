@@ -678,6 +678,7 @@ impl PanelLine {
                 let rl = t.ruby_len();
                 let xr = x + cv.met;
                 let mut yr = y + cv.metr;
+                //log!("***draw_line: rw={} t.width={}", rw, t.width);
 
                 if rw > t.width {
                   cv.context.set_font(&cv.ruby_font);
@@ -758,19 +759,8 @@ impl PanelLine {
                   if let Some(rs) = &t.ruby {
                     let mut w = t.width - rw;
 
-                    if rl > 1 {
-                      if w > cv.metr {
-                        yr += (cv.met - cv.metr) * 0.5;
-                        w = t.width - (cv.met - cv.metr) - rw;
-                        w = w / (rl - 1) as f64;
-                      } else {
-                        yr += w * 0.5;
-                        w = 0.0;
-                      }
-                    } else if rl == 1 {
-                      let w2 = w * 0.5;
-                      yr += w2;
-                    }
+                    w = w / rl as f64;
+                    yr += w * 0.5;
 
                     for r in rs {
                       for c in r.word.chars() {
@@ -1141,19 +1131,8 @@ impl PanelLine {
                   if let Some(rs) = &t.ruby {
                     let mut w = t.width - rw;
 
-                    if rl > 1 {
-                      if w > cv.metr {
-                        xr += (cv.met - cv.metr) * 0.5;
-                        w = t.width - (cv.met - cv.metr) - rw;
-                        w = w / (rl - 1) as f64;
-                      } else {
-                        xr += w * 0.5;
-                        w = 0.0;
-                      }
-                    } else if rl == 1 {
-                      let w2 = w * 0.5;
-                      xr += w2;
-                    }
+                    w = w / rl as f64;
+                    xr += w * 0.5;
 
                     for r in rs {
                       for c in r.word.chars() {

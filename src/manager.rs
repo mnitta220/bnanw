@@ -786,27 +786,50 @@ impl Manager {
 
     match self.tab {
       TabType::TabText => {
-        match mt {
-          // 次の段・節に進む
-          FuncType::FdSec => {}
+        if let Some(ps) = &mut self.psec {
+          if self.is_black_text {
+            if let Some(cv) = &self.canvas {
+              if let Err(e) = ps.tool_func(mt, &cv) {
+                return Err(e);
+              }
 
-          // 前の段・節に戻る
-          FuncType::BkSec => {}
-
-          // 非表示
-          FuncType::Hide => {
-            self.is_hide_text = !self.is_hide_text;
-            if let Err(e) = self.draw() {
-              return Err(e);
+              if let Err(e) = self.draw() {
+                return Err(e);
+              }
+            } else {
+              return Err("ERR_GET_CANVAS");
             }
-          }
-
-          _ => {
-            if let Some(ps) = &mut self.psec {
-              if self.is_black_text {
+          } else {
+            match mt {
+              // 1ページ進む
+              FuncType::FdSlash => {
                 if let Some(cv) = &self.canvas {
-                  if let Err(e) = ps.tool_func(mt, &cv) {
-                    return Err(e);
+                  if self.is_vertical {
+                    /*
+                    log!(
+                      "***pos={} width={} panel_width={}",
+                      ps.pos,
+                      ps.width,
+                      ps.panel_width
+                    );
+                    */
+                    let l = ps.count_lines();
+                    let w = cv.met + cv.ruby_w + cv.line_margin;
+                    if w * l as f64 > (ps.pos + ps.width) {
+                      ps.pos = ps.pos + ps.width;
+                      let c = (ps.pos / w) as i32;
+                      ps.pos = w * (c as f64);
+                    }
+
+                    //if ps.pos < 0.0 {
+                    //  ps.pos = 0.0;
+                    //}
+                  } else {
+                    ps.pos = ps.pos + ps.height;
+
+                    if ps.pos > 0.0 {
+                      ps.pos = 0.0;
+                    }
                   }
 
                   if let Err(e) = self.draw() {
@@ -815,124 +838,83 @@ impl Manager {
                 } else {
                   return Err("ERR_GET_CANVAS");
                 }
-              } else {
-                match mt {
-                  // 1ページ進む
-                  FuncType::FdSlash => {
-                    if let Some(cv) = &self.canvas {
-                      if self.is_vertical {
-                        ps.pos = ps.pos + ps.width;
-                        let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
-                        ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
+              }
 
-                        //if ps.pos < 0.0 {
-                        //  ps.pos = 0.0;
-                        //}
-                      } else {
-                        ps.pos = ps.pos + ps.height;
+              // 1ページ戻る
+              FuncType::BkSlash => {
+                if let Some(cv) = &self.canvas {
+                  if self.is_vertical {
+                    ps.pos = ps.pos - ps.width;
+                    let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
+                    ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
 
-                        if ps.pos > 0.0 {
-                          ps.pos = 0.0;
-                        }
-                      }
+                    if ps.pos < 0.0 {
+                      ps.pos = 0.0;
+                    }
+                  } else {
+                    ps.pos = ps.pos - ps.height;
 
-                      if let Err(e) = self.draw() {
-                        return Err(e);
-                      }
-                    } else {
-                      return Err("ERR_GET_CANVAS");
+                    if ps.pos > 0.0 {
+                      ps.pos = 0.0;
                     }
                   }
 
-                  // 1ページ戻る
-                  FuncType::BkSlash => {
-                    if let Some(cv) = &self.canvas {
-                      if self.is_vertical {
-                        ps.pos = ps.pos - ps.width;
-                        let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
-                        ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
-
-                        if ps.pos < 0.0 {
-                          ps.pos = 0.0;
-                        }
-                      } else {
-                        ps.pos = ps.pos - ps.height;
-
-                        if ps.pos > 0.0 {
-                          ps.pos = 0.0;
-                        }
-                      }
-
-                      if let Err(e) = self.draw() {
-                        return Err(e);
-                      }
-                    } else {
-                      return Err("ERR_GET_CANVAS");
-                    }
+                  if let Err(e) = self.draw() {
+                    return Err(e);
                   }
-
-                  // 末尾に進む
-                  FuncType::FdBottom => {
-                    if self.is_vertical {
-                      ps.pos = ps.panel_width - (ps.width * 0.6);
-
-                      if ps.pos < 0.0 {
-                        ps.pos = 0.0;
-                      }
-                    } else {
-                      ps.pos = (ps.height * 0.6) - ps.panel_width;
-
-                      if ps.pos > 0.0 {
-                        ps.pos = 0.0;
-                      }
-                    }
-
-                    if let Err(e) = self.draw() {
-                      return Err(e);
-                    }
-                  }
-
-                  // 先頭に戻る
-                  FuncType::BkTop => {
-                    ps.pos = 0.0;
-
-                    if let Err(e) = self.draw() {
-                      return Err(e);
-                    }
-                  }
-
-                  _ => {}
+                } else {
+                  return Err("ERR_GET_CANVAS");
                 }
               }
+
+              // 末尾に進む
+              FuncType::FdBottom => {
+                if self.is_vertical {
+                  ps.pos = ps.panel_width - (ps.width * 0.6);
+
+                  if ps.pos < 0.0 {
+                    ps.pos = 0.0;
+                  }
+                } else {
+                  ps.pos = (ps.height * 0.6) - ps.panel_width;
+
+                  if ps.pos > 0.0 {
+                    ps.pos = 0.0;
+                  }
+                }
+
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+
+              // 先頭に戻る
+              FuncType::BkTop => {
+                ps.pos = 0.0;
+
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+
+              _ => {}
             }
           }
         }
       }
 
       TabType::TabContents => {
-        match mt {
-          // 非表示
-          FuncType::Hide => {
-            self.is_hide_contents = !self.is_hide_contents;
+        if let Some(pc) = &mut self.pcon {
+          if let Some(cv) = &self.canvas {
+            if let Err(e) = pc.tool_func(mt, &cv) {
+              return Err(e);
+            }
+
             if let Err(e) = self.draw() {
               return Err(e);
             }
-          }
-
-          _ => {
-            if let Some(pc) = &mut self.pcon {
-              if let Some(cv) = &self.canvas {
-                if let Err(e) = pc.tool_func(mt, &cv) {
-                  return Err(e);
-                }
-
-                if let Err(e) = self.draw() {
-                  return Err(e);
-                }
-              } else {
-                return Err("ERR_GET_CANVAS");
-              }
-            }
+          } else {
+            return Err("ERR_GET_CANVAS");
           }
         }
       }
@@ -949,6 +931,35 @@ impl Manager {
         }
       }
       TabType::TabBoard => {}
+    }
+
+    Ok(0)
+  }
+
+  /// 非表示
+  pub fn hide(&mut self, is_hide: bool) -> Result<isize, &'static str> {
+    log!("***manager::hide is_hide={}", is_hide);
+    if self.canvas.is_none() {
+      if let Err(e) = self.init_canvas() {
+        return Err(e);
+      }
+    }
+
+    match self.tab {
+      TabType::TabText => {
+        self.is_hide_text = is_hide;
+        if let Err(e) = self.draw() {
+          return Err(e);
+        }
+      }
+
+      TabType::TabContents => {
+        self.is_hide_contents = is_hide;
+        if let Err(e) = self.draw() {
+          return Err(e);
+        }
+      }
+      _ => {}
     }
 
     Ok(0)
