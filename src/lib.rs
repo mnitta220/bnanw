@@ -676,7 +676,6 @@ pub fn tool_func(step: i32) -> Result<isize, JsValue> {
 ///
 #[wasm_bindgen]
 pub fn hide(is_hide: i32) -> Result<isize, JsValue> {
-  log!("***hide {}", is_hide);
   let mut ret: isize = -3;
 
   if let Err(e1) = MANAGER.with(|mg| match mg.try_borrow_mut() {

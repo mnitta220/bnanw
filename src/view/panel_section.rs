@@ -76,7 +76,7 @@ impl panel::Panel for PanelSection {
     if let Some(sb) = &mut self.scroll_bar {
       let mut diff: f64 = 0.0;
 
-      if self.is_vertical || is_black {
+      if self.is_vertical {
         let mut x = self.pos + cv.x2 - cv.met - cv.ruby_w;
 
         if sb.bar_touching {
@@ -218,7 +218,14 @@ impl panel::Panel for PanelSection {
 
   /// タッチを移動する
   fn touch_move(&mut self, x: i32, y: i32) -> Result<isize, &'static str> {
-    //log!("***PanelSection.touch_move: x={} y={}", x, y);
+    /*
+      log!(
+        "***PanelSection.touch_move: x={} y={} pos={}",
+        x,
+        y,
+        self.pos
+      );
+    */
     let mut ret: isize = -1;
 
     if self.is_vertical {
@@ -248,17 +255,17 @@ impl panel::Panel for PanelSection {
         }
       } else {
         if self.touching {
+          //if let Some(a) = self.areas.last() {
           let p1 = self.pos + (x - self.start_x) as f64;
+          //let p2 = a.x2 + (x - self.start_x) as f64;
 
-          if let Some(a) = self.areas.last() {
-            let p2 = a.x2 + (x - self.start_x) as f64;
-
-            if p2 < (self.width * 0.5) && p1 > 0.0 {
-              self.cur_x = x;
-              self.cur_y = y;
-              ret = 0;
-            }
+          //if p2 < (self.width * 0.5) && p1 > 0.0 {
+          if p1 > 0.0 {
+            self.cur_x = x;
+            self.cur_y = y;
+            ret = 0;
           }
+          //}
         }
       }
     } else {
@@ -288,17 +295,17 @@ impl panel::Panel for PanelSection {
         }
       } else {
         if self.touching {
+          //if let Some(a) = self.areas.last() {
           let p1 = self.pos + (y - self.start_y) as f64;
+          //let p2 = a.y2 + (y - self.start_y) as f64;
 
-          if let Some(a) = self.areas.last() {
-            let p2 = a.y2 + (y - self.start_y) as f64;
-
-            if p2 > (self.height * 0.5) && p1 <= 0.0 {
-              self.cur_x = x;
-              self.cur_y = y;
-              ret = 0;
-            }
+          //if p2 > (self.height * 0.5) && p1 <= 0.0 {
+          if p1 <= 0.0 {
+            self.cur_x = x;
+            self.cur_y = y;
+            ret = 0;
           }
+          //}
         }
       }
     }
@@ -316,7 +323,7 @@ impl panel::Panel for PanelSection {
   /// - それ以外 : 異常終了
   ///
   fn touch_end(&mut self) -> Result<isize, &'static str> {
-    //log!("***PanelSection.touch_end");
+    //log!("***PanelSection.touch_end pos={}", self.pos);
     let ret: isize = -3;
     let mut is_sb: bool = false;
 
@@ -359,12 +366,20 @@ impl panel::Panel for PanelSection {
 
       if self.is_vertical {
         diff3 = self.cur_x - self.start_x;
+        if self.touching {
+          self.pos += diff3 as f64;
+          if self.pos < 0.0 {
+            self.pos = 0.0;
+          }
+        }
       } else {
         diff3 = self.cur_y - self.start_y;
-      }
-
-      if self.touching {
-        self.pos += diff3 as f64;
+        if self.touching {
+          self.pos += diff3 as f64;
+          if self.pos > 0.0 {
+            self.pos = 0.0;
+          }
+        }
       }
     }
 

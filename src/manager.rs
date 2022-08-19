@@ -804,6 +804,8 @@ impl Manager {
               // 1ページ進む
               FuncType::FdSlash => {
                 if let Some(cv) = &self.canvas {
+                  let l = ps.count_lines();
+                  let w = cv.met + cv.ruby_w + cv.line_margin;
                   if self.is_vertical {
                     /*
                     log!(
@@ -813,8 +815,6 @@ impl Manager {
                       ps.panel_width
                     );
                     */
-                    let l = ps.count_lines();
-                    let w = cv.met + cv.ruby_w + cv.line_margin;
                     if w * l as f64 > (ps.pos + ps.width) {
                       ps.pos = ps.pos + ps.width;
                       let c = (ps.pos / w) as i32;
@@ -825,11 +825,20 @@ impl Manager {
                     //  ps.pos = 0.0;
                     //}
                   } else {
+                    //log!("***pos={} height={} w={} l={}", ps.pos, ps.height, w, l);
+                    if w * l as f64 > (-ps.pos + ps.height) {
+                      ps.pos = ps.pos - ps.height;
+                      let c = (ps.pos / w) as i32;
+                      ps.pos = w * (c as f64);
+                    }
+                    //log!("***pos={}", ps.pos);
+                    /*
                     ps.pos = ps.pos + ps.height;
 
                     if ps.pos > 0.0 {
                       ps.pos = 0.0;
                     }
+                    */
                   }
 
                   if let Err(e) = self.draw() {
@@ -843,16 +852,19 @@ impl Manager {
               // 1ページ戻る
               FuncType::BkSlash => {
                 if let Some(cv) = &self.canvas {
+                  let w = cv.met + cv.ruby_w + cv.line_margin;
                   if self.is_vertical {
                     ps.pos = ps.pos - ps.width;
-                    let c = (ps.pos / (cv.met + cv.ruby_w + cv.line_margin)) as i32;
-                    ps.pos = (cv.met + cv.ruby_w + cv.line_margin) * (c as f64);
+                    let c = (ps.pos / w) as i32;
+                    ps.pos = w * (c as f64);
 
                     if ps.pos < 0.0 {
                       ps.pos = 0.0;
                     }
                   } else {
-                    ps.pos = ps.pos - ps.height;
+                    ps.pos = ps.pos + ps.height;
+                    let c = (ps.pos / w) as i32;
+                    ps.pos = w * (c as f64);
 
                     if ps.pos > 0.0 {
                       ps.pos = 0.0;
@@ -938,7 +950,7 @@ impl Manager {
 
   /// 非表示
   pub fn hide(&mut self, is_hide: bool) -> Result<isize, &'static str> {
-    log!("***manager::hide is_hide={}", is_hide);
+    //log!("***manager::hide is_hide={}", is_hide);
     if self.canvas.is_none() {
       if let Err(e) = self.init_canvas() {
         return Err(e);
