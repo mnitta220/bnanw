@@ -74,12 +74,12 @@ impl PanelToken {
   }
 
   pub fn max_width(&self) -> f64 {
-    let rw = self.ruby_width();
+    //let rw = self.ruby_width();
 
-    if rw > self.width {
-      rw
-    } else {
-      self.width
-    }
+    //if rw > self.width {
+    //  rw
+    //} else {
+    self.width
+    //}
   }
 }

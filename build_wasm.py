@@ -1,55 +1,27 @@
 import shutil
+import subprocess
 
-print('Hello, world!')
-print(1 + 2)
+print('Build started.')
 path = 'pkg/bnanw.js'
 path_w = '../bnan/src/assets/pkg/bnanw.js'
+
+cargo = subprocess.run("cargo build --target=wasm32-unknown-unknown --release", shell=True)
+if cargo.returncode != 0:
+  print("cargo build failed!")
+  quit()
+
+bindgen = subprocess.run("wasm-bindgen target/wasm32-unknown-unknown/release/bnanw.wasm --out-dir ./pkg --target web", shell=True)
+if bindgen.returncode != 0:
+  print("wasm-bindgen failed!")
+  quit()
+
 shutil.copyfile('pkg/bnanw_bg.wasm', '../bnan/src/assets/pkg/bnanw_bg.wasm')
 shutil.copyfile('pkg/bnanw_bg.wasm.d.ts', '../bnan/src/assets/pkg/bnanw_bg.wasm.d.ts')
 shutil.copyfile('pkg/bnanw.d.ts', '../bnan/src/assets/pkg/bnanw.d.ts')
 
-'''
-with open(path) as f:
-    s = f.read()
-    print(type(s))
-    print(s)
-with open(path) as f:
-    l = f.readlines()
-    print(type(l))
-    print(l)
-
-with open(path) as f:
-    l_strip = [s.strip() for s in f.readlines()]
-    print(l_strip)
-
-with open(path) as f:
-    l = f.readlines()
-    print(l[1])
-
-with open(path) as f:
-    for s_line in f:
-        print(s_line.strip())
-with open(path) as f:
-    s_line = f.readline()
-    print(s_line)
-    s_line = f.readline()
-    print(s_line)
-
-with open(path) as f:
-    while True:
-        s_line = f.readline()
-        print(s_line)
-        if not s_line:
-            break
-with open(path) as f:
-    for s_line in f:
-        print(s_line)
-'''
-
 with open(path) as f:
     lines = f.readlines()
 
-# s = 'New file'
 step = 0
 
 with open(path_w, mode='w') as f:
@@ -75,5 +47,4 @@ with open(path_w, mode='w') as f:
     else:
       f.write(l)
 
-#with open(path_w) as f:
-#    print(f.read())
+print('BUild successfully end.')

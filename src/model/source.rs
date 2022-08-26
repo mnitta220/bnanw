@@ -327,7 +327,7 @@ impl Source {
     let mut j: usize;
     let mut ruby_s: usize;
     let mut ruby_e: usize;
-    let mut ruby_len: i32;
+    //let mut ruby_len: i32;
     let mut ruby_tokens: Vec<token::Token2>;
     let mut t: token::Token2;
     let mut seq = 0;
@@ -339,7 +339,7 @@ impl Source {
 
       ruby_s = i;
       ruby_e = i;
-      ruby_len = 0;
+      //ruby_len = 0;
       ruby_tokens = Vec::new();
 
       if (i + 1) < self.tokens.len() {
@@ -378,11 +378,11 @@ impl Source {
 
                 ruby_tokens.push(t);
                 seq += 1;
-                ruby_len += self.tokens[j].word.chars().count() as i32;
+                //ruby_len += self.tokens[j].word.chars().count() as i32;
 
-                if ruby_len > 50 {
-                  break;
-                }
+                //if ruby_len > 50 {
+                //  break;
+                //}
               }
 
               _ => {

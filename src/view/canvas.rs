@@ -22,7 +22,9 @@ pub struct Canvas {
   pub ruby_w: f64,
   pub line_margin: f64,
   pub char_width: f64,
-  pub char_count: i32,
+  pub char_count: usize,
+  pub ruby_pt: i32,
+  pub ruby_part: String,
 }
 
 impl Canvas {
@@ -47,7 +49,8 @@ impl Canvas {
 
     let base_font = &format!("{}pt {}", font_size, f);
     let con_font = &format!("{}pt Arial", font_size);
-    let ruby_pt: f32 = font_size as f32 * 0.5;
+    let ruby_pt: i32 = (font_size as f32 * 0.5) as i32;
+    /*
     let mut ruby_font = format!("{}", ruby_pt);
 
     if let Some(n) = ruby_font.find('.') {
@@ -55,6 +58,9 @@ impl Canvas {
     }
 
     ruby_font = format!("{}pt {}", ruby_font, f);
+    */
+    let ruby_part = format!("pt {}", f);
+    let ruby_font = format!("{}{}", ruby_pt, ruby_part);
     context.set_font(&ruby_font);
     let metr = context.measure_text("あ").unwrap().width();
     context.set_font(base_font);
@@ -68,7 +74,7 @@ impl Canvas {
     let ruby_w = met / 3.0;
     //let line_margin: f64 = met * 0.39;
     let line_margin: f64; // = met * 0.39;
-    let char_count: i32;
+    let char_count: usize;
     let char_width: f64;
     let x3 = x2 - met * 0.5;
     let y3 = y2 - met * 0.5;
@@ -78,15 +84,16 @@ impl Canvas {
       //let w2 = x2 - x1;
       let c = (w / (met * 1.72)) as i32;
       line_margin = (w - (met + ruby_w) * (c as f64)) / (c as f64);
-      char_count = ((y3 - y1) / met) as i32;
+      char_count = ((y3 - y1) / met) as usize;
       char_width = (y3 - y1) / char_count as f64;
     } else {
       x2 -= padding;
       let c = (h / (met * 1.72)) as i32;
       line_margin = (h - (met + ruby_w) * (c as f64)) / (c as f64);
-      char_count = ((x3 - x1) / met) as i32;
+      char_count = ((x3 - x1) / met) as usize;
       char_width = (x3 - x1) / char_count as f64;
     }
+    log! {"ruby_font: {}, ruby_pt={}, ruby_part={}", ruby_font, ruby_pt, ruby_part};
 
     Canvas {
       canvas: canvas,
@@ -111,6 +118,8 @@ impl Canvas {
       line_margin: line_margin,
       char_width: char_width,
       char_count: char_count,
+      ruby_pt,
+      ruby_part,
     }
   }
 
@@ -122,5 +131,19 @@ impl Canvas {
     }
 
     self.context.fill_rect(0.0, 0.0, self.width, self.height);
+  }
+
+  pub fn ruby_font_size_from_width(&self, width: f64) -> i32 {
+    let mut font_pt = self.ruby_pt;
+    while font_pt > 5 {
+      let ruby_font = format!("{}{}", font_pt, self.ruby_part);
+      self.context.set_font(&ruby_font);
+      let metr = self.context.measure_text("あ").unwrap().width();
+      if metr <= width {
+        return font_pt;
+      }
+      font_pt = (font_pt as f64 * 0.9) as i32;
+    }
+    0
   }
 }
