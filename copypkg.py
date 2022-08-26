@@ -3,10 +3,10 @@ import shutil
 print('Hello, world!')
 print(1 + 2)
 path = 'pkg/bnanw.js'
-path_w = '../bnan/www/assets/pkg/bnanw.js'
-shutil.copyfile('pkg/bnanw_bg.wasm', '../bnan/www/assets/pkg/bnanw_bg.wasm')
-shutil.copyfile('pkg/bnanw_bg.wasm.d.ts', '../bnan/www/assets/pkg/bnanw_bg.wasm.d.ts')
-shutil.copyfile('pkg/bnanw.d.ts', '../bnan/www/assets/pkg/bnanw.d.ts')
+path_w = '../bnan/src/assets/pkg/bnanw.js'
+shutil.copyfile('pkg/bnanw_bg.wasm', '../bnan/src/assets/pkg/bnanw_bg.wasm')
+shutil.copyfile('pkg/bnanw_bg.wasm.d.ts', '../bnan/src/assets/pkg/bnanw_bg.wasm.d.ts')
+shutil.copyfile('pkg/bnanw.d.ts', '../bnan/src/assets/pkg/bnanw.d.ts')
 
 '''
 with open(path) as f:

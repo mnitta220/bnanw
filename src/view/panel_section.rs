@@ -72,6 +72,7 @@ impl panel::Panel for PanelSection {
     */
 
     cv.clear(is_dark);
+    self.draw_block(cv, is_dark);
 
     if let Some(sb) = &mut self.scroll_bar {
       let mut diff: f64 = 0.0;
@@ -896,5 +897,39 @@ impl PanelSection {
     }
 
     j
+  }
+
+  fn draw_block(&mut self, cv: &canvas::Canvas, is_dark: bool) {
+    cv.context.set_line_width(1.0);
+    if is_dark {
+      cv.context.set_stroke_style(&JsValue::from_str("#333333"));
+    } else {
+      cv.context.set_stroke_style(&JsValue::from_str("#c0c0c0"));
+    }
+    let mut x = cv.x2 - cv.ruby_w;
+    let mut y: f64;
+    loop {
+      if x < 0.0 {
+        break;
+      }
+      cv.context.begin_path();
+      cv.context.move_to(x, cv.y1);
+      cv.context.line_to(x, cv.y3);
+      cv.context.stroke();
+      x -= cv.met;
+      cv.context.begin_path();
+      cv.context.move_to(x, cv.y1);
+      cv.context.line_to(x, cv.y3);
+      cv.context.stroke();
+      y = cv.y1;
+      for _i in 0..=cv.char_count {
+        cv.context.begin_path();
+        cv.context.move_to(x, y);
+        cv.context.line_to(x + cv.met, y);
+        cv.context.stroke();
+        y += cv.char_width;
+      }
+      x -= cv.line_margin + cv.ruby_w;
+    }
   }
 }

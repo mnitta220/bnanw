@@ -17,8 +17,12 @@ pub struct Canvas {
   pub y1: f64,
   pub x2: f64,
   pub y2: f64,
+  pub x3: f64,
+  pub y3: f64,
   pub ruby_w: f64,
   pub line_margin: f64,
+  pub char_width: f64,
+  pub char_count: i32,
 }
 
 impl Canvas {
@@ -64,16 +68,24 @@ impl Canvas {
     let ruby_w = met / 3.0;
     //let line_margin: f64 = met * 0.39;
     let line_margin: f64; // = met * 0.39;
+    let char_count: i32;
+    let char_width: f64;
+    let x3 = x2 - met * 0.5;
+    let y3 = y2 - met * 0.5;
 
     if is_vertical {
       y2 -= padding;
       //let w2 = x2 - x1;
       let c = (w / (met * 1.72)) as i32;
       line_margin = (w - (met + ruby_w) * (c as f64)) / (c as f64);
+      char_count = ((y3 - y1) / met) as i32;
+      char_width = (y3 - y1) / char_count as f64;
     } else {
       x2 -= padding;
       let c = (h / (met * 1.72)) as i32;
       line_margin = (h - (met + ruby_w) * (c as f64)) / (c as f64);
+      char_count = ((x3 - x1) / met) as i32;
+      char_width = (x3 - x1) / char_count as f64;
     }
 
     Canvas {
@@ -93,8 +105,12 @@ impl Canvas {
       y1: y1,
       x2: x2,
       y2: y2,
+      x3: x3,
+      y3: y3,
       ruby_w: ruby_w,
       line_margin: line_margin,
+      char_width: char_width,
+      char_count: char_count,
     }
   }
 
