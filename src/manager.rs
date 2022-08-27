@@ -755,6 +755,7 @@ impl Manager {
               ty = s.ty;
             }
 
+            //log!("***change_section PanelLine");
             let pl = view::panel_line::PanelLine::new(self.is_vertical, &s, &cv);
             ps.plines.push(pl);
           }

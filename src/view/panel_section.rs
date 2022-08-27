@@ -904,7 +904,7 @@ impl PanelSection {
     if is_dark {
       cv.context.set_stroke_style(&JsValue::from_str("#333333"));
     } else {
-      cv.context.set_stroke_style(&JsValue::from_str("#c0c0c0"));
+      cv.context.set_stroke_style(&JsValue::from_str("#d8d8d8"));
     }
     let mut x = cv.x2 - cv.ruby_w;
     let mut y: f64;

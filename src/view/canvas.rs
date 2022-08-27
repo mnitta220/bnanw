@@ -93,7 +93,7 @@ impl Canvas {
       char_count = ((x3 - x1) / met) as usize;
       char_width = (x3 - x1) / char_count as f64;
     }
-    log! {"ruby_font: {}, ruby_pt={}, ruby_part={}", ruby_font, ruby_pt, ruby_part};
+    //log! {"ruby_font: {}, ruby_pt={}, ruby_part={}", ruby_font, ruby_pt, ruby_part};
 
     Canvas {
       canvas: canvas,
@@ -133,17 +133,17 @@ impl Canvas {
     self.context.fill_rect(0.0, 0.0, self.width, self.height);
   }
 
-  pub fn ruby_font_size_from_width(&self, width: f64) -> i32 {
+  pub fn ruby_font_size_from_width(&self, width: f64) -> (i32, f64) {
     let mut font_pt = self.ruby_pt;
     while font_pt > 5 {
       let ruby_font = format!("{}{}", font_pt, self.ruby_part);
       self.context.set_font(&ruby_font);
       let metr = self.context.measure_text("あ").unwrap().width();
       if metr <= width {
-        return font_pt;
+        return (font_pt, metr);
       }
       font_pt = (font_pt as f64 * 0.9) as i32;
     }
-    0
+    (0, 0.0)
   }
 }

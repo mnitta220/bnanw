@@ -24,8 +24,8 @@ impl ViewLine {
 
   pub fn to_string(&self) -> String {
     format!(
-      "ViewLine: last={} align={} count={} width={}",
-      self.last, self.align, self.count, self.width
+      "ViewLine: last={} align={} count={} width={} first_token_idx={}",
+      self.last, self.align, self.count, self.width, self.first_token_idx
     )
   }
 }

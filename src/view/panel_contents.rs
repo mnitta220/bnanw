@@ -433,6 +433,7 @@ impl PanelContents {
       self.plines.push(pl);
 
       for c in contents {
+        //log!("***PanelContents PanelLine");
         let pl = panel_line::PanelLine::new(is_vertical, &sources[*c], &cv);
         self.plines.push(pl);
       }
