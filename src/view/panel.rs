@@ -12,6 +12,7 @@ pub trait Panel {
     is_black: bool,
     is_dark: bool,
     is_hide: bool,
+    is_hide_block: bool,
   ) -> Result<isize, &'static str>;
 
   /// タッチ開始

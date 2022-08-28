@@ -61,6 +61,7 @@ impl panel::Panel for PanelSection {
     is_black: bool,
     is_dark: bool,
     is_hide: bool,
+    is_hide_block: bool,
   ) -> Result<isize, &'static str> {
     /*
     log!(
@@ -72,13 +73,15 @@ impl panel::Panel for PanelSection {
     */
 
     cv.clear(is_dark);
-    self.draw_block(cv, is_dark);
+    if is_hide_block == false {
+      self.draw_block(cv, is_dark);
+    }
 
     if let Some(sb) = &mut self.scroll_bar {
       let mut diff: f64 = 0.0;
 
       if self.is_vertical {
-        let mut x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+        let mut x = self.pos + cv.width - cv.line_margin * 0.1 - cv.metr - cv.met * 1.1;
 
         if sb.bar_touching {
           diff = (sb.start_x - sb.cur_x) as f64 * sb.panel_width / sb.width;
@@ -112,7 +115,7 @@ impl panel::Panel for PanelSection {
           }
         }
       } else {
-        let mut y = self.pos + cv.met + cv.ruby_w + cv.y1;
+        let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;
 
         if sb.bar_touching {
           diff = (sb.start_y - sb.cur_y) as f64 * sb.panel_width / sb.width;
@@ -470,7 +473,7 @@ impl PanelSection {
       self.black_token
     );
     */
-    let margin = cv.met + cv.ruby_w + cv.line_margin;
+    let margin = cv.met * 1.2 + cv.metr + cv.line_margin;
 
     match mt {
       // 1区切り進む
@@ -904,9 +907,9 @@ impl PanelSection {
     if is_dark {
       cv.context.set_stroke_style(&JsValue::from_str("#333333"));
     } else {
-      cv.context.set_stroke_style(&JsValue::from_str("#d8d8d8"));
+      cv.context.set_stroke_style(&JsValue::from_str("#d4d4d4"));
     }
-    let mut x = cv.x2 - cv.ruby_w;
+    let mut x = cv.width - cv.metr - cv.line_margin * 0.1;
     let mut y: f64;
     loop {
       if x < 0.0 {
@@ -916,7 +919,7 @@ impl PanelSection {
       cv.context.move_to(x, cv.y1);
       cv.context.line_to(x, cv.y3);
       cv.context.stroke();
-      x -= cv.met;
+      x -= cv.met * 1.2;
       cv.context.begin_path();
       cv.context.move_to(x, cv.y1);
       cv.context.line_to(x, cv.y3);
@@ -925,11 +928,11 @@ impl PanelSection {
       for _i in 0..=cv.char_count {
         cv.context.begin_path();
         cv.context.move_to(x, y);
-        cv.context.line_to(x + cv.met, y);
+        cv.context.line_to(x + cv.met * 1.2, y);
         cv.context.stroke();
         y += cv.char_width;
       }
-      x -= cv.line_margin + cv.ruby_w;
+      x -= cv.line_margin + cv.metr;
     }
   }
 }

@@ -27,6 +27,10 @@ pub enum FuncType {
   FdSec,
   // 前の段・節に戻る
   BkSec,
+  // 原稿用紙非表示
+  HideBlock,
+  // 原稿用紙表示
+  ShowBlock,
 }
 
 #[derive(Display, Debug)]
@@ -163,6 +167,7 @@ pub fn set_doc(
   vertical: isize,
   font_size: isize,
   current: isize,
+  is_hide_block: bool,
 ) -> Result<(), JsValue> {
   /*
   log!(
@@ -177,7 +182,7 @@ pub fn set_doc(
   if let Err(e1) = MANAGER.with(|mg| {
     match mg
       .borrow_mut()
-      .set_doc(id, title, vertical, font_size, current)
+      .set_doc(id, title, vertical, font_size, current, is_hide_block)
     {
       Err(e) => {
         return Err(JsValue::from_str(&format!("set_doc failed!: {}", e)));
@@ -614,6 +619,8 @@ pub fn mode_change(black: bool) -> Result<(), JsValue> {
 /// - 5 : 先頭に戻る
 /// - 6 : 次の段・節に進む
 /// - 7 : 前の段・節に戻る
+/// - 9 : 原稿用紙非表示
+/// - 10 : 原稿用紙表示
 ///
 /// # 戻り値
 /// なし
@@ -632,6 +639,8 @@ pub fn tool_func(step: i32) -> Result<isize, JsValue> {
     5 => mt = FuncType::BkTop,
     6 => mt = FuncType::FdSec,
     7 => mt = FuncType::BkSec,
+    9 => mt = FuncType::HideBlock,
+    10 => mt = FuncType::ShowBlock,
     _ => {
       return Err(JsValue::from_str(&format!(
         "tool_func invalid step:{}",

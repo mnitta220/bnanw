@@ -19,7 +19,7 @@ pub struct Canvas {
   pub y2: f64,
   pub x3: f64,
   pub y3: f64,
-  pub ruby_w: f64,
+  //pub ruby_w: f64,
   pub line_margin: f64,
   pub char_width: f64,
   pub char_count: usize,
@@ -50,15 +50,6 @@ impl Canvas {
     let base_font = &format!("{}pt {}", font_size, f);
     let con_font = &format!("{}pt Arial", font_size);
     let ruby_pt: i32 = (font_size as f32 * 0.5) as i32;
-    /*
-    let mut ruby_font = format!("{}", ruby_pt);
-
-    if let Some(n) = ruby_font.find('.') {
-      ruby_font = (&ruby_font[0..n + 2]).to_string();
-    }
-
-    ruby_font = format!("{}pt {}", ruby_font, f);
-    */
     let ruby_part = format!("pt {}", f);
     let ruby_font = format!("{}{}", ruby_pt, ruby_part);
     context.set_font(&ruby_font);
@@ -71,9 +62,8 @@ impl Canvas {
     let y1: f64 = padding;
     let mut x2: f64 = w - padding;
     let mut y2: f64 = h - padding;
-    let ruby_w = met / 3.0;
-    //let line_margin: f64 = met * 0.39;
-    let line_margin: f64; // = met * 0.39;
+    //let ruby_w = met / 3.0;
+    let line_margin: f64;
     let char_count: usize;
     let char_width: f64;
     let x3 = x2 - met * 0.5;
@@ -81,15 +71,16 @@ impl Canvas {
 
     if is_vertical {
       y2 -= padding;
-      //let w2 = x2 - x1;
-      let c = (w / (met * 1.72)) as i32;
-      line_margin = (w - (met + ruby_w) * (c as f64)) / (c as f64);
+      //let c = (w / (met * 1.72)) as i32;
+      let c = (x2 / (met * 1.2 + metr)) as i32;
+      //line_margin = (x2 - 20.0) / c as f64 - met * 1.75;
+      line_margin = (x2 - (met * 1.2 + metr) * (c as f64)) / (c as f64);
       char_count = ((y3 - y1) / met) as usize;
       char_width = (y3 - y1) / char_count as f64;
     } else {
       x2 -= padding;
       let c = (h / (met * 1.72)) as i32;
-      line_margin = (h - (met + ruby_w) * (c as f64)) / (c as f64);
+      line_margin = (h - (met * 1.72) * (c as f64)) / (c as f64);
       char_count = ((x3 - x1) / met) as usize;
       char_width = (x3 - x1) / char_count as f64;
     }
@@ -114,7 +105,7 @@ impl Canvas {
       y2: y2,
       x3: x3,
       y3: y3,
-      ruby_w: ruby_w,
+      //ruby_w: ruby_w,
       line_margin: line_margin,
       char_width: char_width,
       char_count: char_count,

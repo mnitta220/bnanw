@@ -20,6 +20,7 @@ pub struct Manager {
   pub is_dark: bool,
   pub is_hide_text: bool,
   pub is_hide_contents: bool,
+  pub is_hide_block: bool,
   pub section: isize,
   pub pcon: Option<view::panel_contents::PanelContents>,
   pub psec: Option<view::panel_section::PanelSection>,
@@ -47,6 +48,7 @@ impl Manager {
       is_dark: false,
       is_hide_text: false,
       is_hide_contents: false,
+      is_hide_block: false,
       section: 0,
       pcon: None,
       psec: None,
@@ -73,6 +75,7 @@ impl Manager {
     vertical: isize,
     font_size: isize,
     current: isize,
+    is_hide_block: bool,
   ) -> Result<isize, &'static str> {
     //log!("***Manager.set_doc: id={} current={}", id, current);
     self.id = id;
@@ -87,6 +90,7 @@ impl Manager {
     self.is_vertical = is_vertical;
     self.is_black_text = false;
     self.is_black_contents = false;
+    self.is_hide_block = is_hide_block;
     self.font_size = font_size;
     self.section = current;
     self.sources.clear();
@@ -359,6 +363,7 @@ impl Manager {
               self.is_black_contents,
               self.is_dark,
               self.is_hide_contents,
+              self.is_hide_block,
             ) {
               return Err(e);
             }
@@ -381,6 +386,7 @@ impl Manager {
               self.is_black_text,
               self.is_dark,
               self.is_hide_text,
+              self.is_hide_block,
             ) {
               return Err(e);
             }
@@ -762,7 +768,7 @@ impl Manager {
         }
 
         self.section = section;
-        let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * ps.count_lines() as f64;
+        let panel_width = (cv.met * 1.2 + cv.metr + cv.line_margin) * ps.count_lines() as f64;
         ps.set_panel_width(panel_width);
       } else {
         return Err("ERR_GET_CANVAS");
@@ -806,7 +812,7 @@ impl Manager {
               FuncType::FdSlash => {
                 if let Some(cv) = &self.canvas {
                   let l = ps.count_lines();
-                  let w = cv.met + cv.ruby_w + cv.line_margin;
+                  let w = cv.met * 1.2 + cv.metr + cv.line_margin;
                   if self.is_vertical {
                     /*
                     log!(
@@ -853,7 +859,7 @@ impl Manager {
               // 1ページ戻る
               FuncType::BkSlash => {
                 if let Some(cv) = &self.canvas {
-                  let w = cv.met + cv.ruby_w + cv.line_margin;
+                  let w = cv.met * 1.2 + cv.metr + cv.line_margin;
                   if self.is_vertical {
                     ps.pos = ps.pos - ps.width;
                     let c = (ps.pos / w) as i32;
@@ -904,6 +910,24 @@ impl Manager {
               // 先頭に戻る
               FuncType::BkTop => {
                 ps.pos = 0.0;
+
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+
+              // 原稿用紙非表示
+              FuncType::HideBlock => {
+                self.is_hide_block = true;
+
+                if let Err(e) = self.draw() {
+                  return Err(e);
+                }
+              }
+
+              // 原稿用紙表示
+              FuncType::ShowBlock => {
+                self.is_hide_block = false;
 
                 if let Err(e) = self.draw() {
                   return Err(e);

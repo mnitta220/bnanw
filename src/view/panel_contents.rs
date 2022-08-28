@@ -67,6 +67,7 @@ impl panel::Panel for PanelContents {
     is_black: bool,
     is_dark: bool,
     is_hide: bool,
+    is_hide_block: bool,
   ) -> Result<isize, &'static str> {
     /*log!(
       "***PanelContents.draw: current={} is_hide={}",
@@ -84,7 +85,7 @@ impl panel::Panel for PanelContents {
         let mut x: f64;
 
         if sb.panel_width > sb.width {
-          x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+          x = self.pos + cv.x2 - cv.met * 1.1 - cv.metr;
 
           if sb.bar_touching {
             diff = (sb.start_x - sb.cur_x) as f64 * sb.panel_width / sb.width;
@@ -96,10 +97,10 @@ impl panel::Panel for PanelContents {
           let p = sb.panel_width - self.pos;
           if sb.width * 0.6 > p {
             self.pos = sb.panel_width - sb.width * 0.6;
-            x = self.pos + cv.x2 - cv.met - cv.ruby_w;
+            x = self.pos + cv.x2 - cv.met * 1.1 - cv.metr;
           }
         } else {
-          x = sb.width - cv.met - cv.ruby_w;
+          x = sb.width - cv.met * 1.1 - cv.metr;
           self.pos = 0.0;
         }
 
@@ -134,7 +135,7 @@ impl panel::Panel for PanelContents {
         let mut y: f64;
 
         if sb.panel_width > sb.width {
-          y = self.pos + cv.met + cv.ruby_w;
+          y = self.pos + cv.met * 1.1 + cv.metr;
 
           if sb.bar_touching {
             diff = (sb.start_y - sb.cur_y) as f64 * sb.panel_width / sb.width;
@@ -146,10 +147,10 @@ impl panel::Panel for PanelContents {
           let p = sb.panel_width + self.pos;
           if sb.width * 0.6 > p {
             self.pos = sb.width * 0.6 - sb.panel_width;
-            y = self.pos + cv.met + cv.ruby_w;
+            y = self.pos + cv.met * 1.1 + cv.metr;
           }
         } else {
-          y = cv.met + cv.ruby_w;
+          y = cv.met * 1.1 + cv.metr;
           self.pos = 0.0;
         }
 
@@ -440,7 +441,7 @@ impl PanelContents {
 
       self.width = cv.width;
       self.height = cv.height;
-      let panel_width = (cv.met + cv.ruby_w + cv.line_margin) * (self.count_lines() + 1) as f64;
+      let panel_width = (cv.met * 1.2 + cv.metr + cv.line_margin) * (self.count_lines() + 1) as f64;
       self.set_panel_width(panel_width);
     }
   }
@@ -513,7 +514,7 @@ impl PanelContents {
       self.plines.len()
     );
     */
-    let margin = cv.met + cv.ruby_w + cv.line_margin;
+    let margin = cv.met * 1.2 + cv.metr + cv.line_margin;
 
     match mt {
       // 1行進む
@@ -800,9 +801,9 @@ impl PanelContents {
     }
 
     if self.is_vertical {
-      self.pos = (cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+      self.pos = (cv.met * 1.2 + cv.metr + cv.line_margin) * count as f64;
     } else {
-      self.pos = -(cv.met + cv.ruby_w + cv.line_margin) * count as f64;
+      self.pos = -(cv.met * 1.2 + cv.metr + cv.line_margin) * count as f64;
     }
   }
 

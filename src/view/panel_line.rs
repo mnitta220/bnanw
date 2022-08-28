@@ -610,7 +610,7 @@ impl PanelLine {
   ) -> Result<f64, &'static str> {
     let mut x = pos; // + cv.met * 0.5;
     let diff = cv.met * 0.5;
-    let bw = cv.met + cv.ruby_w + 1.0;
+    let bw = cv.met + cv.metr + 1.0;
     let font: &str;
     let mut area_x1: f64 = pos;
     let area_x2: f64 = pos + bw;
@@ -673,10 +673,10 @@ impl PanelLine {
       cv.context.fill_text("Top", y, -x - 2.0).unwrap();
       cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
 
-      x -= cv.met + cv.ruby_w + cv.line_margin;
+      x -= cv.met * 1.2 + cv.metr + cv.line_margin;
     } else if self.ptokens.len() == 0 {
       // 空行
-      x -= cv.met + cv.ruby_w + cv.line_margin;
+      x -= cv.met * 1.2 + cv.metr + cv.line_margin;
     } else {
       //log!("***draw_line: 2");
       let mut is_first = true;
@@ -685,9 +685,9 @@ impl PanelLine {
         let mut char_count = 0;
         area_x1 = x;
 
-        if (-cv.met * 4.0) < x && x < (cv.canvas.width() as f64) {
+        if x + cv.met > 0.0 && x < cv.width {
           let mut y = cv.y1 + cv.char_width * 0.5; // self.indent;
-          let spc: f64 = 1.0;
+                                                   //let spc: f64 = 1.0;
           let mut y1 = cv.y1;
           let mut y2: f64;
           /*
@@ -870,7 +870,7 @@ impl PanelLine {
                   if let Some(rs) = &t.ruby {
                     let w = t.word.chars().count() as f64 * cv.char_width;
                     let rw = w / t.ruby_len() as f64;
-                    let mut xr = x + diff + (cv.met + cv.metr) * 0.5;
+                    let mut xr = x + cv.met * 1.1 + cv.metr * 0.5;
                     let mut yr = y - (cv.char_width - rw) * 0.5;
                     let ruby_font_size = cv.ruby_font_size_from_width(rw);
                     /*
@@ -895,7 +895,7 @@ impl PanelLine {
                             //let mut yr2 = yr;
                             if yr > cv.y3 + ruby_font_size.1 * 0.5 {
                               yr = yr - cv.y3 + cv.y1; // + ruby_font_size.1;
-                              xr -= cv.met + cv.ruby_w + cv.line_margin;
+                              xr -= cv.met * 1.2 + cv.metr + cv.line_margin;
                             }
                             match c {
                               '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［'
@@ -1135,7 +1135,7 @@ impl PanelLine {
           }
         }
 
-        x -= cv.met + cv.ruby_w + cv.line_margin;
+        x -= cv.met * 1.2 + cv.metr + cv.line_margin;
       }
 
       if is_contents {
@@ -1161,7 +1161,7 @@ impl PanelLine {
     is_dark: bool,
   ) -> Result<f64, &'static str> {
     let mut y = pos;
-    let bw = cv.met + cv.ruby_w + 1.0;
+    let bw = cv.met + cv.metr + 1.0;
     let font: &str;
     let area_y1: f64 = pos - bw;
     let mut area_y2: f64 = pos;
@@ -1217,10 +1217,10 @@ impl PanelLine {
 
       cv.context.set_font(&cv.con_font);
       cv.context.fill_text("Top", x, y).unwrap();
-      y += cv.met + cv.ruby_w + cv.line_margin;
+      y += cv.met * 1.2 + cv.metr + cv.line_margin;
     } else if self.ptokens.len() == 0 {
       // 空行
-      y += cv.met + cv.ruby_w + cv.line_margin;
+      y += cv.met * 1.2 + cv.metr + cv.line_margin;
     } else {
       let mut is_first = true;
 
@@ -1444,7 +1444,7 @@ impl PanelLine {
           }
         }
 
-        y += cv.met + cv.ruby_w + cv.line_margin;
+        y += cv.met * 1.2 + cv.metr + cv.line_margin;
       }
 
       if is_contents {
