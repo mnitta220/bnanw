@@ -25,6 +25,7 @@ pub struct Canvas {
   pub char_count: usize,
   pub ruby_pt: i32,
   pub ruby_part: String,
+  pub line_width: f64,
 }
 
 impl Canvas {
@@ -111,6 +112,7 @@ impl Canvas {
       char_count: char_count,
       ruby_pt,
       ruby_part,
+      line_width: met * 1.2 + metr + line_margin,
     }
   }
 

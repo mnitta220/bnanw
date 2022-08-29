@@ -65,88 +65,29 @@ impl panel::Panel for PanelSection {
   ) -> Result<isize, &'static str> {
     /*
     log!(
-      "***PanelSection.draw: is_black={} is_dark={} is_hide={}",
+      "***PanelSection.draw: is_black={} is_dark={} is_hide={} pos={}",
       is_black,
       is_dark,
-      is_hide
+      is_hide,
+      self.pos
     );
     */
 
     cv.clear(is_dark);
-    if is_hide_block == false {
-      self.draw_block(cv, is_dark);
-    }
+    let mut diff: f64 = 0.0;
 
     if let Some(sb) = &mut self.scroll_bar {
-      let mut diff: f64 = 0.0;
-
       if self.is_vertical {
-        let mut x = self.pos + cv.width - cv.line_margin * 0.1 - cv.metr - cv.met * 1.1;
-
         if sb.bar_touching {
           diff = (sb.start_x - sb.cur_x) as f64 * sb.panel_width / sb.width;
         } else if self.touching {
           diff = (self.cur_x - self.start_x) as f64;
         }
-
-        if is_hide == false || is_black {
-          x += diff;
-
-          for l in &self.plines {
-            match l.draw_line(
-              x,
-              self.font_size,
-              cv,
-              areas,
-              self.black_source,
-              self.black_token,
-              false,
-              is_black,
-              false,
-              false,
-              is_dark,
-            ) {
-              Ok(r) => x = r,
-
-              Err(e) => {
-                return Err(e);
-              }
-            }
-          }
-        }
       } else {
-        let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;
-
         if sb.bar_touching {
           diff = (sb.start_y - sb.cur_y) as f64 * sb.panel_width / sb.width;
         } else if self.touching {
           diff = (self.cur_y - self.start_y) as f64;
-        }
-
-        if is_hide == false || is_black {
-          y += diff;
-
-          for l in &self.plines {
-            match l.draw_line(
-              y,
-              self.font_size,
-              cv,
-              areas,
-              self.black_source,
-              self.black_token,
-              false,
-              is_black,
-              false,
-              false,
-              is_dark,
-            ) {
-              Ok(r) => y = r,
-
-              Err(e) => {
-                return Err(e);
-              }
-            }
-          }
         }
       }
 
@@ -154,6 +95,70 @@ impl panel::Panel for PanelSection {
         Err(e) => return Err(e),
 
         _ => {}
+      }
+    }
+
+    //if is_hide_block == false {
+    //  self.draw_block(cv, diff, is_dark);
+    //}
+
+    if self.is_vertical {
+      let mut x = self.pos + cv.width - cv.line_margin * 0.1 - cv.metr - cv.met * 1.1;
+
+      if is_hide == false || is_black {
+        x += diff;
+
+        for l in &self.plines {
+          match l.draw_line(
+            x,
+            self.font_size,
+            cv,
+            areas,
+            self.black_source,
+            self.black_token,
+            false,
+            is_black,
+            false,
+            false,
+            is_dark,
+            is_hide_block,
+          ) {
+            Ok(r) => x = r,
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
+      }
+    } else {
+      let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;
+
+      if is_hide == false || is_black {
+        y += diff;
+
+        for l in &self.plines {
+          match l.draw_line(
+            y,
+            self.font_size,
+            cv,
+            areas,
+            self.black_source,
+            self.black_token,
+            false,
+            is_black,
+            false,
+            false,
+            is_dark,
+            is_hide_block,
+          ) {
+            Ok(r) => y = r,
+
+            Err(e) => {
+              return Err(e);
+            }
+          }
+        }
       }
     }
 
@@ -902,37 +907,45 @@ impl PanelSection {
     j
   }
 
-  fn draw_block(&mut self, cv: &canvas::Canvas, is_dark: bool) {
+  /*
+  fn draw_block(&mut self, cv: &canvas::Canvas, diff: f64, is_dark: bool) {
     cv.context.set_line_width(1.0);
     if is_dark {
       cv.context.set_stroke_style(&JsValue::from_str("#333333"));
     } else {
       cv.context.set_stroke_style(&JsValue::from_str("#d4d4d4"));
     }
-    let mut x = cv.width - cv.metr - cv.line_margin * 0.1;
+    let mut x = self.pos + diff + cv.width - cv.metr - cv.line_margin * 0.1;
+    //x = x % cv.line_width;
+    //log!("***x={}", x);
     let mut y: f64;
     loop {
       if x < 0.0 {
         break;
       }
-      cv.context.begin_path();
-      cv.context.move_to(x, cv.y1);
-      cv.context.line_to(x, cv.y3);
-      cv.context.stroke();
-      x -= cv.met * 1.2;
-      cv.context.begin_path();
-      cv.context.move_to(x, cv.y1);
-      cv.context.line_to(x, cv.y3);
-      cv.context.stroke();
-      y = cv.y1;
-      for _i in 0..=cv.char_count {
+      if x < cv.width + cv.line_width {
         cv.context.begin_path();
-        cv.context.move_to(x, y);
-        cv.context.line_to(x + cv.met * 1.2, y);
+        cv.context.move_to(x, cv.y1);
+        cv.context.line_to(x, cv.y3);
         cv.context.stroke();
-        y += cv.char_width;
+      }
+      x -= cv.met * 1.2;
+      if x < cv.width + cv.line_width {
+        cv.context.begin_path();
+        cv.context.move_to(x, cv.y1);
+        cv.context.line_to(x, cv.y3);
+        cv.context.stroke();
+        y = cv.y1;
+        for _i in 0..=cv.char_count {
+          cv.context.begin_path();
+          cv.context.move_to(x, y);
+          cv.context.line_to(x + cv.met * 1.2, y);
+          cv.context.stroke();
+          y += cv.char_width;
+        }
       }
       x -= cv.line_margin + cv.metr;
     }
   }
+  */
 }

@@ -548,6 +548,7 @@ impl PanelLine {
     is_gray: bool,
     is_current: bool,
     is_dark: bool,
+    is_hide_block: bool,
   ) -> Result<f64, &'static str> {
     /*
     log!(
@@ -577,6 +578,7 @@ impl PanelLine {
         is_gray,
         is_current,
         is_dark,
+        is_hide_block,
       )
     } else {
       self.draw_horizontal(
@@ -607,6 +609,7 @@ impl PanelLine {
     is_gray: bool,
     is_current: bool,
     is_dark: bool,
+    is_hide_block: bool,
   ) -> Result<f64, &'static str> {
     let mut x = pos; // + cv.met * 0.5;
     let diff = cv.met * 0.5;
@@ -667,16 +670,22 @@ impl PanelLine {
         let area = area::Area::new(manager::DOC_TOP, 0, x, y, x + bw, cv.y2);
         areas.push(area);
       }
+      if is_hide_block == false {
+        self.draw_block(cv, x, is_dark);
+      }
 
       cv.context.set_font(&cv.con_font);
       cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
       cv.context.fill_text("Top", y, -x - 2.0).unwrap();
       cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
 
-      x -= cv.met * 1.2 + cv.metr + cv.line_margin;
+      x -= cv.line_width;
     } else if self.ptokens.len() == 0 {
       // 空行
-      x -= cv.met * 1.2 + cv.metr + cv.line_margin;
+      if is_hide_block == false {
+        self.draw_block(cv, x, is_dark);
+      }
+      x -= cv.line_width;
     } else {
       //log!("***draw_line: 2");
       let mut is_first = true;
@@ -729,6 +738,9 @@ impl PanelLine {
             }
           }
 
+          if is_hide_block == false {
+            self.draw_block(cv, x, is_dark);
+          }
           /*
           if l.last {
             log!("***draw_line: 4");
@@ -1135,7 +1147,7 @@ impl PanelLine {
           }
         }
 
-        x -= cv.met * 1.2 + cv.metr + cv.line_margin;
+        x -= cv.line_width;
       }
 
       if is_contents {
@@ -1145,6 +1157,38 @@ impl PanelLine {
     }
 
     Ok(x)
+  }
+
+  fn draw_block(&self, cv: &canvas::Canvas, x: f64, is_dark: bool) {
+    cv.context.set_line_width(1.0);
+    if is_dark {
+      cv.context.set_stroke_style(&JsValue::from_str("#333333"));
+    } else {
+      cv.context.set_stroke_style(&JsValue::from_str("#d4d4d4"));
+    }
+    //let mut x = diff + cv.width - cv.metr - cv.line_margin * 0.1;
+    //x = x % cv.line_width;
+    //log!("***x={}", x);
+    let x1 = x - cv.met * 0.1;
+    let x2 = x + cv.met * 1.1;
+    let mut y: f64;
+    cv.context.begin_path();
+    cv.context.move_to(x1, cv.y1);
+    cv.context.line_to(x1, cv.y3);
+    cv.context.stroke();
+    //x -= cv.met * 1.2;
+    cv.context.begin_path();
+    cv.context.move_to(x2, cv.y1);
+    cv.context.line_to(x2, cv.y3);
+    cv.context.stroke();
+    y = cv.y1;
+    for _i in 0..=cv.char_count {
+      cv.context.begin_path();
+      cv.context.move_to(x1, y);
+      cv.context.line_to(x2, y);
+      cv.context.stroke();
+      y += cv.char_width;
+    }
   }
 
   fn draw_horizontal(

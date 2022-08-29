@@ -120,6 +120,7 @@ impl panel::Panel for PanelContents {
               is_gray,
               l.source == self.current,
               is_dark,
+              is_hide_block,
             ) {
               Ok(r) => x = r,
 
@@ -170,6 +171,7 @@ impl panel::Panel for PanelContents {
               is_gray,
               l.source == self.current,
               is_dark,
+              is_hide_block,
             ) {
               Ok(r) => y = r,
 
