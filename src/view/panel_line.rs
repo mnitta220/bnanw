@@ -273,7 +273,11 @@ impl PanelLine {
     let mut tc: panel_token::PanelToken;
     let mut vl = view_line::ViewLine::new();
     let mut i: usize = 0;
+    vl.first = true;
     vl.align = self.align;
+    if self.ty > 0 {
+      i = self.ty as usize - 1;
+    }
     for token in self.ptokens.iter() {
       //log!("***token={}", token.to_string());
       if token.ty == token::TokenType::Slash {
@@ -548,6 +552,7 @@ impl PanelLine {
     is_gray: bool,
     is_current: bool,
     is_dark: bool,
+    is_hide_char: bool,
     is_hide_block: bool,
   ) -> Result<f64, &'static str> {
     /*
@@ -578,6 +583,7 @@ impl PanelLine {
         is_gray,
         is_current,
         is_dark,
+        is_hide_char,
         is_hide_block,
       )
     } else {
@@ -592,6 +598,8 @@ impl PanelLine {
         is_gray,
         is_current,
         is_dark,
+        is_hide_char,
+        is_hide_block,
       )
     }
   }
@@ -609,10 +617,12 @@ impl PanelLine {
     is_gray: bool,
     is_current: bool,
     is_dark: bool,
+    is_hide_char: bool,
     is_hide_block: bool,
   ) -> Result<f64, &'static str> {
     let mut x = pos; // + cv.met * 0.5;
     let diff = cv.met * 0.5;
+    let diff2 = cv.char_width * 0.5;
     let bw = cv.met + cv.metr + 1.0;
     let font: &str;
     let mut area_x1: f64 = pos;
@@ -695,8 +705,8 @@ impl PanelLine {
         area_x1 = x;
 
         if x + cv.met > 0.0 && x < cv.width {
-          let mut y = cv.y1 + cv.char_width * 0.5; // self.indent;
-                                                   //let spc: f64 = 1.0;
+          let mut y = cv.y1; // + cv.char_width * 0.5; // self.indent;
+                             //let spc: f64 = 1.0;
           let mut y1 = cv.y1;
           let mut y2: f64;
           /*
@@ -708,6 +718,9 @@ impl PanelLine {
             cv.met
           );
           */
+          if self.ty > 0 && l.first {
+            y += cv.met * (self.ty - 1) as f64;
+          }
 
           if is_contents && (is_gray || is_current) {
             if is_current {
@@ -774,145 +787,42 @@ impl PanelLine {
             }
           }
           */
-          let mut token_idx = 0;
+          if is_hide_char == false {
+            let mut token_idx = 0;
 
-          for t in &l.ptokens {
-            token_idx += 1;
-            let mut black = false;
+            for t in &l.ptokens {
+              token_idx += 1;
+              let mut black = false;
 
-            if is_black {
-              if self.source > black_line || (self.source == black_line && t.seq >= black_token) {
-                black = true;
-              }
-            }
-
-            match t.ty {
-              token::TokenType::Zenkaku
-              | token::TokenType::Kana
-              | token::TokenType::Yousoku
-              | token::TokenType::Special => {
-                //log!("***draw_line: 6");
-                //let rw = t.ruby_width();
-                //let rl = t.ruby_len();
-                //let xr = x + cv.met;
-                //let mut yr = y + cv.metr;
-                //log!("***draw_line: rw={} t.width={}", rw, t.width);
-
-                /*
-                if rw > t.width {
-                  cv.context.set_font(&cv.ruby_font);
-
-                  if let Some(rs) = &t.ruby {
-                    for r in rs {
-                      for c in r.word.chars() {
-                        if black == false {
-                          match c {
-                            '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［' | '］'
-                            | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' => {
-                              cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                              cv.context
-                                .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
-                                .unwrap();
-                              cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
-                            }
-
-                            _ => {
-                              if r.ty == token::TokenType::Yousoku {
-                                cv.context
-                                  .fill_text(
-                                    &c.to_string(),
-                                    xr + (cv.metr * 0.1),
-                                    yr - (cv.metr * 0.1),
-                                  )
-                                  .unwrap();
-                              } else {
-                                cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
-                              }
-                            }
-                          }
-                        }
-
-                        yr += cv.metr;
-                      }
-                    }
-                  }
-
-                  cv.context.set_font(font);
-
-                  {
-                    let w = rw - t.width;
-                    let l = t.word.chars().count();
-                    let w = w / (l + 1) as f64;
-                    let mut y3 = y + cv.met + (w * 0.8);
-
-                    for c in t.word.chars() {
-                      if black == false {
-                        match t.ty {
-                          token::TokenType::Special => {
-                            let st = &c.to_string();
-                            let w3 = cv.context.measure_text(st).unwrap().width();
-                            let w3 = (cv.met - w3) * 0.5;
-                            cv.context.fill_text(st, x + w3, y3).unwrap();
-                          }
-
-                          token::TokenType::Yousoku => {
-                            cv.context
-                              .fill_text(&c.to_string(), x + (cv.met * 0.1), y3 - (cv.met * 0.1))
-                              .unwrap();
-                          }
-
-                          _ => {
-                            cv.context.fill_text(&c.to_string(), x, y3).unwrap();
-                          }
-                        }
-                      }
-
-                      y3 += cv.met + w;
-                    }
-                  }
-
-                  y = yr - cv.metr + spc;
-                } else {
+              if is_black {
+                if self.source > black_line || (self.source == black_line && t.seq >= black_token) {
+                  black = true;
                 }
-                */
+              }
 
-                //log!("***draw_line: 7");
+              match t.ty {
+                token::TokenType::Zenkaku
+                | token::TokenType::Kana
+                | token::TokenType::Yousoku
+                | token::TokenType::Special => {
+                  //log!("***draw_line: 6");
+                  //let rw = t.ruby_width();
+                  //let rl = t.ruby_len();
+                  //let xr = x + cv.met;
+                  //let mut yr = y + cv.metr;
+                  //log!("***draw_line: rw={} t.width={}", rw, t.width);
 
-                if &l.first_token_idx == &0 || token_idx != 1 {
-                  if let Some(rs) = &t.ruby {
-                    let w = t.word.chars().count() as f64 * cv.char_width;
-                    let rw = w / t.ruby_len() as f64;
-                    let mut xr = x + cv.met * 1.1 + cv.metr * 0.5;
-                    let mut yr = y - (cv.char_width - rw) * 0.5;
-                    let ruby_font_size = cv.ruby_font_size_from_width(rw);
-                    /*
-                    log!(
-                      "***draw_line: 8 y={} t.word.len={} ruby_len={} rw={} yr={} ruby={}",
-                      y,
-                      t.word.chars().count(),
-                      t.ruby_len(),
-                      rw,
-                      yr,
-                      ruby
-                    );
-                    log!("***draw_line: 8.1 x={} y={}", x, y);
-                    */
-                    if ruby_font_size.0 > 0 {
-                      cv.context
-                        .set_font(&format!("{}{}", ruby_font_size.0, cv.ruby_part));
+                  /*
+                  if rw > t.width {
+                    cv.context.set_font(&cv.ruby_font);
+
+                    if let Some(rs) = &t.ruby {
                       for r in rs {
                         for c in r.word.chars() {
                           if black == false {
-                            //let mut xr2 = xr;
-                            //let mut yr2 = yr;
-                            if yr > cv.y3 + ruby_font_size.1 * 0.5 {
-                              yr = yr - cv.y3 + cv.y1; // + ruby_font_size.1;
-                              xr -= cv.met * 1.2 + cv.metr + cv.line_margin;
-                            }
                             match c {
-                              '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［'
-                              | '］' | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' =>
-                              {
+                              '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［' | '］'
+                              | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' => {
                                 cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
                                 cv.context
                                   .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
@@ -935,215 +845,322 @@ impl PanelLine {
                               }
                             }
                           }
-                          yr += rw;
+
+                          yr += cv.metr;
                         }
                       }
                     }
-                    //log!("***draw_line: 8.2 x={} y={}", x, y);
 
-                    /*
-                    cv.context.set_font(&cv.ruby_font);
-                    let mut w = t.width - rw;
+                    cv.context.set_font(font);
 
-                    w = w / rl as f64;
-                    yr += w * 0.5;
+                    {
+                      let w = rw - t.width;
+                      let l = t.word.chars().count();
+                      let w = w / (l + 1) as f64;
+                      let mut y3 = y + cv.met + (w * 0.8);
 
-                    for r in rs {
-                      for c in r.word.chars() {
+                      for c in t.word.chars() {
                         if black == false {
-                          match c {
-                            '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［' | '］'
-                            | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' => {
-                              cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                          match t.ty {
+                            token::TokenType::Special => {
+                              let st = &c.to_string();
+                              let w3 = cv.context.measure_text(st).unwrap().width();
+                              let w3 = (cv.met - w3) * 0.5;
+                              cv.context.fill_text(st, x + w3, y3).unwrap();
+                            }
+
+                            token::TokenType::Yousoku => {
                               cv.context
-                                .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
+                                .fill_text(&c.to_string(), x + (cv.met * 0.1), y3 - (cv.met * 0.1))
                                 .unwrap();
-                              cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
                             }
 
                             _ => {
-                              if r.ty == token::TokenType::Yousoku {
-                                cv.context
-                                  .fill_text(
-                                    &c.to_string(),
-                                    xr + (cv.metr * 0.1),
-                                    yr - (cv.metr * 0.1),
-                                  )
-                                  .unwrap();
-                              } else {
-                                cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
-                              }
+                              cv.context.fill_text(&c.to_string(), x, y3).unwrap();
                             }
                           }
                         }
 
-                        yr += cv.metr + w;
+                        y3 += cv.met + w;
                       }
                     }
-                    */
+
+                    y = yr - cv.metr + spc;
+                  } else {
                   }
-                }
-
-                cv.context.set_font(font);
-                //log!("***draw_line: 8.3 x={} y={}", x, y);
-                let mut i: usize = 0;
-
-                for c in t.word.chars() {
-                  //log!("***draw_line: 9 x={} y={}", x, y);
-                  //y += cv.met;
-                  char_count += 1;
-                  /*
-                  log!(
-                    "***draw_line: 10 l.first_token_idx={} i={} c={} cv.char_count={} char_count={} i={} token_idx={}",
-                    l.first_token_idx,
-                    i,
-                    &c.to_string(), cv.char_count, char_count, i, token_idx
-                  );
                   */
 
-                  if &l.first_token_idx <= &i || token_idx != 1 {
-                    if cv.char_count >= char_count {
-                      //char_count += 1;
-                      if black == false {
-                        match t.ty {
-                          token::TokenType::Special => {
-                            let st = &c.to_string();
-                            let w3 = cv.context.measure_text(st).unwrap().width();
-                            let w3 = (cv.met - w3) * 0.5;
-                            cv.context.fill_text(st, x + w3, y).unwrap();
-                          }
+                  //log!("***draw_line: 7");
 
-                          token::TokenType::Yousoku => {
-                            cv.context
-                              .fill_text(&c.to_string(), x + (cv.met * 0.1), y - (cv.met * 0.1))
-                              .unwrap();
-                          }
+                  if &l.first_token_idx == &0 || token_idx != 1 {
+                    if let Some(rs) = &t.ruby {
+                      let w = t.word.chars().count() as f64 * cv.char_width;
+                      let rw = w / t.ruby_len() as f64;
+                      let mut xr = x + cv.met * 1.1 + cv.metr * 0.5;
+                      let mut yr = y + rw * 0.5;
+                      let ruby_font_size = cv.ruby_font_size_from_width(rw);
+                      /*
+                      log!(
+                        "***draw_line: 8 y={} t.word.len={} ruby_len={} rw={} yr={} ruby={}",
+                        y,
+                        t.word.chars().count(),
+                        t.ruby_len(),
+                        rw,
+                        yr,
+                        ruby
+                      );
+                      log!("***draw_line: 8.1 x={} y={}", x, y);
+                      */
+                      if ruby_font_size.0 > 0 {
+                        cv.context
+                          .set_font(&format!("{}{}", ruby_font_size.0, cv.ruby_part));
+                        for r in rs {
+                          for c in r.word.chars() {
+                            if black == false {
+                              //let mut xr2 = xr;
+                              //let mut yr2 = yr;
+                              if yr > cv.y3 + ruby_font_size.1 * 0.5 {
+                                yr = yr - cv.y3 + cv.y1; // + ruby_font_size.1;
+                                xr -= cv.met * 1.2 + cv.metr + cv.line_margin;
+                              }
+                              match c {
+                                '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［'
+                                | '］' | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' =>
+                                {
+                                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                                  cv.context
+                                    .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
+                                    .unwrap();
+                                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                                }
 
-                          _ => {
-                            //log!("***draw_line: 11 y={}", y);
-                            cv.context.fill_text(&c.to_string(), x + diff, y).unwrap();
+                                _ => {
+                                  if r.ty == token::TokenType::Yousoku {
+                                    cv.context
+                                      .fill_text(
+                                        &c.to_string(),
+                                        xr + (cv.metr * 0.1),
+                                        yr - (cv.metr * 0.1),
+                                      )
+                                      .unwrap();
+                                  } else {
+                                    cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                                  }
+                                }
+                              }
+                            }
+                            yr += rw;
                           }
                         }
                       }
-                      y += cv.char_width;
+                      //log!("***draw_line: 8.2 x={} y={}", x, y);
+
+                      /*
+                      cv.context.set_font(&cv.ruby_font);
+                      let mut w = t.width - rw;
+
+                      w = w / rl as f64;
+                      yr += w * 0.5;
+
+                      for r in rs {
+                        for c in r.word.chars() {
+                          if black == false {
+                            match c {
+                              '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】' | '［' | '］'
+                              | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝' | '～' => {
+                                cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                                cv.context
+                                  .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
+                                  .unwrap();
+                                cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                              }
+
+                              _ => {
+                                if r.ty == token::TokenType::Yousoku {
+                                  cv.context
+                                    .fill_text(
+                                      &c.to_string(),
+                                      xr + (cv.metr * 0.1),
+                                      yr - (cv.metr * 0.1),
+                                    )
+                                    .unwrap();
+                                } else {
+                                  cv.context.fill_text(&c.to_string(), xr, yr).unwrap();
+                                }
+                              }
+                            }
+                          }
+
+                          yr += cv.metr + w;
+                        }
+                      }
+                      */
                     }
-                  } else {
-                    char_count -= 1;
                   }
-                  i += 1;
+
+                  cv.context.set_font(font);
+                  //log!("***draw_line: 8.3 x={} y={}", x, y);
+                  let mut i: usize = 0;
+
+                  for c in t.word.chars() {
+                    //log!("***draw_line: 9 x={} y={}", x, y);
+                    //y += cv.met;
+                    char_count += 1;
+                    /*
+                    log!(
+                      "***draw_line: 10 l.first_token_idx={} i={} c={} cv.char_count={} char_count={} i={} token_idx={}",
+                      l.first_token_idx,
+                      i,
+                      &c.to_string(), cv.char_count, char_count, i, token_idx
+                    );
+                    */
+
+                    if &l.first_token_idx <= &i || token_idx != 1 {
+                      if cv.char_count >= char_count {
+                        //char_count += 1;
+                        if black == false {
+                          match t.ty {
+                            token::TokenType::Special => {
+                              let st = &c.to_string();
+                              let w3 = cv.context.measure_text(st).unwrap().width();
+                              let w3 = (cv.met - w3) * 0.5;
+                              cv.context.fill_text(st, x + w3, y).unwrap();
+                            }
+
+                            token::TokenType::Yousoku => {
+                              cv.context
+                                .fill_text(&c.to_string(), x + (cv.met * 0.1), y - (cv.met * 0.1))
+                                .unwrap();
+                            }
+
+                            _ => {
+                              //log!("***draw_line: 11 y={}", y);
+                              cv.context
+                                .fill_text(&c.to_string(), x + diff, y + diff2)
+                                .unwrap();
+                            }
+                          }
+                        }
+                        y += cv.char_width;
+                      }
+                    } else {
+                      char_count -= 1;
+                    }
+                    i += 1;
+                  }
+
+                  //y += spc;
                 }
 
-                //y += spc;
-              }
+                token::TokenType::Zenkigo => {
+                  char_count += 1;
+                  if black == false {
+                    cv.context.set_text_baseline("bottom");
+                    //cv.context.set_text_align("center");
+                    cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                    //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                    //cv.context
+                    //  .fill_text(&t.word, y + (cv.metr * 0.22), -x - (cv.metr * 0.22))
+                    //  .unwrap();
+                    cv.context
+                      .fill_text(&t.word, y + diff2, -x + (cv.met * 0.13))
+                      .unwrap();
+                    cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                    cv.context.set_text_baseline("middle");
+                    //cv.context.set_text_align("center");
+                  }
 
-              token::TokenType::Zenkigo => {
-                char_count += 1;
-                if black == false {
-                  cv.context.set_text_baseline("bottom");
-                  //cv.context.set_text_align("center");
-                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                  //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
-                  //cv.context
-                  //  .fill_text(&t.word, y + (cv.metr * 0.22), -x - (cv.metr * 0.22))
-                  //  .unwrap();
-                  cv.context
-                    .fill_text(&t.word, y, -x + (cv.met * 0.13))
-                    .unwrap();
-                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
-                  cv.context.set_text_baseline("middle");
-                  //cv.context.set_text_align("center");
+                  y += cv.char_width;
                 }
 
-                y += cv.char_width;
-              }
+                token::TokenType::Alpha => {
+                  if black == false {
+                    cv.context.set_text_baseline("ideographic");
+                    //cv.context.set_text_align("center");
+                    cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                    //cv.context.fill_text(&t.word, y + 3.0, -x - 4.0).unwrap();
+                    cv.context
+                      .fill_text(&t.word, y + diff2 + (cv.met * 0.18), -x + (cv.met * 0.08))
+                      .unwrap();
+                    cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                    cv.context.set_text_baseline("middle");
+                    //cv.context.set_text_align("center");
+                  }
 
-              token::TokenType::Alpha => {
-                if black == false {
-                  cv.context.set_text_baseline("ideographic");
-                  //cv.context.set_text_align("center");
-                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                  //cv.context.fill_text(&t.word, y + 3.0, -x - 4.0).unwrap();
-                  cv.context
-                    .fill_text(&t.word, y + (cv.met * 0.18), -x + (cv.met * 0.08))
-                    .unwrap();
-                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
-                  cv.context.set_text_baseline("middle");
-                  //cv.context.set_text_align("center");
+                  y += cv.char_width;
                 }
 
-                y += cv.char_width;
-              }
+                token::TokenType::Hankigo => {
+                  if black == false {
+                    cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
+                    //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
+                    cv.context
+                      .fill_text(&t.word, y + 3.0, -x - (font_size as f64 * 0.3) - 1.0)
+                      .unwrap();
+                    cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                  }
 
-              token::TokenType::Hankigo => {
-                if black == false {
-                  cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                  //cv.context.fill_text(&t.word, y + 3.0, -x - 2.0).unwrap();
-                  cv.context
-                    .fill_text(&t.word, y + 3.0, -x - (font_size as f64 * 0.3) - 1.0)
-                    .unwrap();
-                  cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                  y += cv.char_width;
                 }
 
-                y += cv.char_width;
-              }
-
-              token::TokenType::Space => {
-                char_count += 1;
-                y += cv.char_width;
-              }
-
-              token::TokenType::Kuten => {
-                char_count += 1;
-                if black == false {
-                  /*
-                  cv.context
-                    .fill_text(&t.word, x + (cv.met * 0.6), y + (cv.met * 0.4))
-                    .unwrap();
-                  */
-
-                  //cv.context.set_text_baseline("top");
-                  //cv.context.set_text_align("right");
-                  cv.context
-                    .fill_text(&t.word, x + diff + cv.met * 0.6, y - cv.met * 0.6)
-                    .unwrap();
-                  //cv.context.set_text_baseline("middle");
-                  //cv.context.set_text_align("center");
+                token::TokenType::Space => {
+                  char_count += 1;
+                  y += cv.char_width;
                 }
 
-                y += cv.char_width;
+                token::TokenType::Kuten => {
+                  char_count += 1;
+                  if black == false {
+                    /*
+                    cv.context
+                      .fill_text(&t.word, x + (cv.met * 0.6), y + (cv.met * 0.4))
+                      .unwrap();
+                    */
+
+                    //cv.context.set_text_baseline("top");
+                    //cv.context.set_text_align("right");
+                    cv.context
+                      .fill_text(&t.word, x + diff + cv.met * 0.6, y - cv.met * 0.1)
+                      .unwrap();
+                    //cv.context.set_text_baseline("middle");
+                    //cv.context.set_text_align("center");
+                  }
+
+                  y += cv.char_width;
+                }
+                _ => {}
               }
-              _ => {}
+
+              y2 = y - y1 + 1.0;
+
+              if y1 + y2 > cv.y2 {
+                y2 = cv.y2 - y1;
+
+                if y2 < 0.0 {
+                  y2 = 0.0;
+                }
+              }
+
+              if t.ty != token::TokenType::Slash && t.ty != token::TokenType::Tatebo {
+                if black {
+                  cv.context.set_fill_style(&JsValue::from_str("#555555"));
+                  cv.context.fill_rect(x, y1 + 1.0, bw, y2);
+
+                  if is_dark {
+                    cv.context.set_fill_style(&JsValue::from_str("#ffffff"));
+                  } else {
+                    cv.context.set_fill_style(&JsValue::from_str("#000000"));
+                  }
+                }
+
+                if is_contents == false {
+                  let area = area::Area::new(self.source, t.seq, x, y1, x + bw, y1 + y2);
+                  areas.push(area);
+                }
+              }
+
+              y1 = y;
             }
-
-            y2 = y - y1 + 1.0;
-
-            if y1 + y2 > cv.y2 {
-              y2 = cv.y2 - y1;
-
-              if y2 < 0.0 {
-                y2 = 0.0;
-              }
-            }
-
-            if t.ty != token::TokenType::Slash && t.ty != token::TokenType::Tatebo {
-              if black {
-                cv.context.set_fill_style(&JsValue::from_str("#555555"));
-                cv.context.fill_rect(x, y1 + 1.0, bw, y2);
-
-                if is_dark {
-                  cv.context.set_fill_style(&JsValue::from_str("#ffffff"));
-                } else {
-                  cv.context.set_fill_style(&JsValue::from_str("#000000"));
-                }
-              }
-
-              if is_contents == false {
-                let area = area::Area::new(self.source, t.seq, x, y1, x + bw, y1 + y2);
-                areas.push(area);
-              }
-            }
-
-            y1 = y;
           }
         }
 
@@ -1203,6 +1220,8 @@ impl PanelLine {
     is_gray: bool,
     is_current: bool,
     is_dark: bool,
+    is_hide_char: bool,
+    is_hide_block: bool,
   ) -> Result<f64, &'static str> {
     let mut y = pos;
     let bw = cv.met + cv.metr + 1.0;

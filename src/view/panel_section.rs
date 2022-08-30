@@ -60,15 +60,15 @@ impl panel::Panel for PanelSection {
     areas: &mut Vec<area::Area>,
     is_black: bool,
     is_dark: bool,
-    is_hide: bool,
+    is_hide_char: bool,
     is_hide_block: bool,
   ) -> Result<isize, &'static str> {
     /*
     log!(
-      "***PanelSection.draw: is_black={} is_dark={} is_hide={} pos={}",
+      "***PanelSection.draw: is_black={} is_dark={} is_hide_char={} pos={}",
       is_black,
       is_dark,
-      is_hide,
+      is_hide_char,
       self.pos
     );
     */
@@ -105,61 +105,63 @@ impl panel::Panel for PanelSection {
     if self.is_vertical {
       let mut x = self.pos + cv.width - cv.line_margin * 0.1 - cv.metr - cv.met * 1.1;
 
-      if is_hide == false || is_black {
-        x += diff;
+      //if is_black {
+      x += diff;
 
-        for l in &self.plines {
-          match l.draw_line(
-            x,
-            self.font_size,
-            cv,
-            areas,
-            self.black_source,
-            self.black_token,
-            false,
-            is_black,
-            false,
-            false,
-            is_dark,
-            is_hide_block,
-          ) {
-            Ok(r) => x = r,
+      for l in &self.plines {
+        match l.draw_line(
+          x,
+          self.font_size,
+          cv,
+          areas,
+          self.black_source,
+          self.black_token,
+          false,
+          is_black,
+          false,
+          false,
+          is_dark,
+          is_hide_char,
+          is_hide_block,
+        ) {
+          Ok(r) => x = r,
 
-            Err(e) => {
-              return Err(e);
-            }
+          Err(e) => {
+            return Err(e);
           }
         }
       }
+      //}
     } else {
       let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;
 
-      if is_hide == false || is_black {
-        y += diff;
+      //if is_black {
+      y += diff;
 
-        for l in &self.plines {
-          match l.draw_line(
-            y,
-            self.font_size,
-            cv,
-            areas,
-            self.black_source,
-            self.black_token,
-            false,
-            is_black,
-            false,
-            false,
-            is_dark,
-            is_hide_block,
-          ) {
-            Ok(r) => y = r,
+      for l in &self.plines {
+        match l.draw_line(
+          y,
+          self.font_size,
+          cv,
+          areas,
+          self.black_source,
+          self.black_token,
+          false,
+          is_black,
+          false,
+          false,
+          is_dark,
+          is_hide_char,
+          is_hide_block,
+        ) {
+          Ok(r) => y = r,
 
-            Err(e) => {
-              return Err(e);
-            }
+          Err(e) => {
+            return Err(e);
           }
         }
       }
+      //}
     }
 
     if is_dark {

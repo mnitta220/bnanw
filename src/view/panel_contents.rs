@@ -66,7 +66,8 @@ impl panel::Panel for PanelContents {
     areas: &mut Vec<area::Area>,
     is_black: bool,
     is_dark: bool,
-    is_hide: bool,
+    //is_hide: bool,
+    is_hide_char: bool,
     is_hide_block: bool,
   ) -> Result<isize, &'static str> {
     /*log!(
@@ -104,7 +105,7 @@ impl panel::Panel for PanelContents {
           self.pos = 0.0;
         }
 
-        if is_hide == false || is_black {
+        if is_black {
           let is_gray = false;
 
           for l in &self.plines {
@@ -120,6 +121,7 @@ impl panel::Panel for PanelContents {
               is_gray,
               l.source == self.current,
               is_dark,
+              is_hide_char,
               is_hide_block,
             ) {
               Ok(r) => x = r,
@@ -155,7 +157,7 @@ impl panel::Panel for PanelContents {
           self.pos = 0.0;
         }
 
-        if is_hide == false || is_black {
+        if is_black {
           let is_gray = false;
 
           for l in &self.plines {
@@ -171,6 +173,7 @@ impl panel::Panel for PanelContents {
               is_gray,
               l.source == self.current,
               is_dark,
+              is_hide_char,
               is_hide_block,
             ) {
               Ok(r) => y = r,
