@@ -139,4 +139,36 @@ impl Canvas {
     }
     (0, 0.0)
   }
+
+  pub fn draw_block(&self, x: f64, is_dark: bool) {
+    self.context.set_line_width(1.0);
+    if is_dark {
+      self.context.set_stroke_style(&JsValue::from_str("#333333"));
+    } else {
+      self.context.set_stroke_style(&JsValue::from_str("#d4d4d4"));
+    }
+    //let mut x = diff + cv.width - cv.metr - cv.line_margin * 0.1;
+    //x = x % cv.line_width;
+    //log!("***x={}", x);
+    let x1 = x - self.met * 0.1;
+    let x2 = x + self.met * 1.1;
+    let mut y: f64;
+    self.context.begin_path();
+    self.context.move_to(x1, self.y1);
+    self.context.line_to(x1, self.y3);
+    self.context.stroke();
+    //x -= cv.met * 1.2;
+    self.context.begin_path();
+    self.context.move_to(x2, self.y1);
+    self.context.line_to(x2, self.y3);
+    self.context.stroke();
+    y = self.y1;
+    for _i in 0..=self.char_count {
+      self.context.begin_path();
+      self.context.move_to(x1, y);
+      self.context.line_to(x2, y);
+      self.context.stroke();
+      y += self.char_width;
+    }
+  }
 }

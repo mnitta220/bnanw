@@ -275,8 +275,10 @@ impl PanelLine {
     let mut i: usize = 0;
     vl.first = true;
     vl.align = self.align;
+    self.indent = 0.0;
     if self.ty > 0 {
-      i = self.ty as usize - 1;
+      self.indent = cv.met * 0.5 * (self.ty - 1) as f64;
+      //  i = self.ty as usize - 1;
     }
     for token in self.ptokens.iter() {
       //log!("***token={}", token.to_string());
@@ -623,7 +625,7 @@ impl PanelLine {
     let mut x = pos; // + cv.met * 0.5;
     let diff = cv.met * 0.5;
     let diff2 = cv.char_width * 0.5;
-    let bw = cv.met + cv.metr + 1.0;
+    let bw = cv.met * 1.2; // + cv.metr + 1.0;
     let font: &str;
     let mut area_x1: f64 = pos;
     let area_x2: f64 = pos + bw;
@@ -668,7 +670,7 @@ impl PanelLine {
             cv.context.set_fill_style(&JsValue::from_str("#dedeff"));
           }
 
-          cv.context.fill_rect(x - 3.0, 0.0, bw, cv.height);
+          cv.context.fill_rect(x - cv.met * 0.1, 0.0, bw, cv.height);
         }
 
         if is_dark {
@@ -681,19 +683,19 @@ impl PanelLine {
         areas.push(area);
       }
       if is_hide_block == false {
-        self.draw_block(cv, x, is_dark);
+        cv.draw_block(x, is_dark);
       }
 
       cv.context.set_font(&cv.con_font);
       cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-      cv.context.fill_text("Top", y, -x - 2.0).unwrap();
+      cv.context.fill_text("Top", y, -x - diff).unwrap();
       cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
 
       x -= cv.line_width;
     } else if self.ptokens.len() == 0 {
       // 空行
       if is_hide_block == false {
-        self.draw_block(cv, x, is_dark);
+        cv.draw_block(x, is_dark);
       }
       x -= cv.line_width;
     } else {
@@ -705,8 +707,8 @@ impl PanelLine {
         area_x1 = x;
 
         if x + cv.met > 0.0 && x < cv.width {
-          let mut y = cv.y1; // + cv.char_width * 0.5; // self.indent;
-                             //let spc: f64 = 1.0;
+          let mut y = cv.y1 + self.indent;
+          //let spc: f64 = 1.0;
           let mut y1 = cv.y1;
           let mut y2: f64;
           /*
@@ -718,9 +720,9 @@ impl PanelLine {
             cv.met
           );
           */
-          if self.ty > 0 && l.first {
-            y += cv.met * (self.ty - 1) as f64;
-          }
+          //if self.ty > 0 && l.first {
+          //  y += cv.met * (self.ty - 1) as f64;
+          //}
 
           if is_contents && (is_gray || is_current) {
             if is_current {
@@ -752,7 +754,7 @@ impl PanelLine {
           }
 
           if is_hide_block == false {
-            self.draw_block(cv, x, is_dark);
+            cv.draw_block(x, is_dark);
           }
           /*
           if l.last {
@@ -1174,38 +1176,6 @@ impl PanelLine {
     }
 
     Ok(x)
-  }
-
-  fn draw_block(&self, cv: &canvas::Canvas, x: f64, is_dark: bool) {
-    cv.context.set_line_width(1.0);
-    if is_dark {
-      cv.context.set_stroke_style(&JsValue::from_str("#333333"));
-    } else {
-      cv.context.set_stroke_style(&JsValue::from_str("#d4d4d4"));
-    }
-    //let mut x = diff + cv.width - cv.metr - cv.line_margin * 0.1;
-    //x = x % cv.line_width;
-    //log!("***x={}", x);
-    let x1 = x - cv.met * 0.1;
-    let x2 = x + cv.met * 1.1;
-    let mut y: f64;
-    cv.context.begin_path();
-    cv.context.move_to(x1, cv.y1);
-    cv.context.line_to(x1, cv.y3);
-    cv.context.stroke();
-    //x -= cv.met * 1.2;
-    cv.context.begin_path();
-    cv.context.move_to(x2, cv.y1);
-    cv.context.line_to(x2, cv.y3);
-    cv.context.stroke();
-    y = cv.y1;
-    for _i in 0..=cv.char_count {
-      cv.context.begin_path();
-      cv.context.move_to(x1, y);
-      cv.context.line_to(x2, y);
-      cv.context.stroke();
-      y += cv.char_width;
-    }
   }
 
   fn draw_horizontal(

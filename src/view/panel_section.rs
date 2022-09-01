@@ -131,6 +131,17 @@ impl panel::Panel for PanelSection {
           }
         }
       }
+
+      if is_hide_block == false {
+        loop {
+          if x + cv.met < 0.0 {
+            break;
+          }
+          cv.draw_block(x, is_dark);
+
+          x -= cv.line_width;
+        }
+      }
       //}
     } else {
       let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;

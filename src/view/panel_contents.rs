@@ -70,12 +70,12 @@ impl panel::Panel for PanelContents {
     is_hide_char: bool,
     is_hide_block: bool,
   ) -> Result<isize, &'static str> {
-    /*log!(
+    log!(
       "***PanelContents.draw: current={} is_hide={}",
       self.current,
-      is_hide
+      is_hide_char
     );
-    */
+    /**/
     cv.clear(is_dark);
     self.is_black = is_black;
 
@@ -105,35 +105,46 @@ impl panel::Panel for PanelContents {
           self.pos = 0.0;
         }
 
-        if is_black {
-          let is_gray = false;
+        //if is_black {
+        let is_gray = false;
 
-          for l in &self.plines {
-            match l.draw_line(
-              x,
-              self.font_size,
-              cv,
-              areas,
-              self.black_source,
-              self.black_token,
-              true,
-              is_black,
-              is_gray,
-              l.source == self.current,
-              is_dark,
-              is_hide_char,
-              is_hide_block,
-            ) {
-              Ok(r) => x = r,
+        for l in &self.plines {
+          match l.draw_line(
+            x,
+            self.font_size,
+            cv,
+            areas,
+            self.black_source,
+            self.black_token,
+            true,
+            is_black,
+            is_gray,
+            l.source == self.current,
+            is_dark,
+            is_hide_char,
+            is_hide_block,
+          ) {
+            Ok(r) => x = r,
 
-              Err(e) => {
-                return Err(e);
-              }
+            Err(e) => {
+              return Err(e);
             }
           }
-
-          //is_gray = !is_gray;
         }
+
+        if is_hide_block == false {
+          loop {
+            if x + cv.met < 0.0 {
+              break;
+            }
+            cv.draw_block(x, is_dark);
+
+            x -= cv.line_width;
+          }
+        }
+
+        //is_gray = !is_gray;
+        //}
       } else {
         let mut y: f64;
 
@@ -157,35 +168,35 @@ impl panel::Panel for PanelContents {
           self.pos = 0.0;
         }
 
-        if is_black {
-          let is_gray = false;
+        //if is_black {
+        let is_gray = false;
 
-          for l in &self.plines {
-            match l.draw_line(
-              y,
-              self.font_size,
-              cv,
-              areas,
-              self.black_source,
-              self.black_token,
-              true,
-              is_black,
-              is_gray,
-              l.source == self.current,
-              is_dark,
-              is_hide_char,
-              is_hide_block,
-            ) {
-              Ok(r) => y = r,
+        for l in &self.plines {
+          match l.draw_line(
+            y,
+            self.font_size,
+            cv,
+            areas,
+            self.black_source,
+            self.black_token,
+            true,
+            is_black,
+            is_gray,
+            l.source == self.current,
+            is_dark,
+            is_hide_char,
+            is_hide_block,
+          ) {
+            Ok(r) => y = r,
 
-              Err(e) => {
-                return Err(e);
-              }
+            Err(e) => {
+              return Err(e);
             }
           }
-
-          //is_gray = !is_gray;
         }
+
+        //is_gray = !is_gray;
+        //}
       }
 
       match sb.draw(&cv, self.pos + diff, is_dark) {
