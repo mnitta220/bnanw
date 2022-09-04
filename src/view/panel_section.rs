@@ -439,12 +439,16 @@ impl PanelSection {
   /// 行数カウント
   pub fn count_lines(&self) -> usize {
     let mut c: usize = 0;
+    let mut z: usize = 0;
+    //log!("***count_lines");
 
     for l in &self.plines {
+      //log!("***len={}", l.lines.len());
       if l.lines.len() == 0 {
-        c += 1;
+        z += 1;
       } else {
-        c += l.lines.len();
+        c += l.lines.len() + z;
+        z = 0;
       }
     }
 

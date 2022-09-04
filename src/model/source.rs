@@ -109,7 +109,7 @@ impl Source {
       }
 
       match c {
-        ' ' | '　' => {
+        ' ' => {
           if buf_type != token::TokenType::None {
             token = token::Token::new(buf_type, buf.as_ref());
             self.tokens.push(token);

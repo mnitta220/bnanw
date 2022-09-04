@@ -812,7 +812,7 @@ impl Manager {
               FuncType::FdSlash => {
                 if let Some(cv) = &self.canvas {
                   let l = ps.count_lines();
-                  let w = cv.met * 1.2 + cv.metr + cv.line_margin;
+                  //let w = cv.met * 1.2 + cv.metr + cv.line_margin;
                   if self.is_vertical {
                     /*
                     log!(
@@ -822,10 +822,14 @@ impl Manager {
                       ps.panel_width
                     );
                     */
-                    if w * l as f64 > (ps.pos + ps.width) {
-                      ps.pos = ps.pos + ps.width;
-                      let c = (ps.pos / w) as i32;
-                      ps.pos = w * (c as f64);
+                    if cv.line_width * l as f64 > (ps.pos + ps.width) {
+                      let mut cur_line = (ps.pos / cv.line_width) as i32;
+                      cur_line += cv.page_lines;
+                      ps.pos = cv.line_width * cur_line as f64;
+
+                      //ps.pos += ps.width;
+                      //let c = (ps.pos / cv.line_width) as i32;
+                      //ps.pos = cv.line_width * (c as f64);
                     }
 
                     //if ps.pos < 0.0 {
@@ -833,10 +837,10 @@ impl Manager {
                     //}
                   } else {
                     //log!("***pos={} height={} w={} l={}", ps.pos, ps.height, w, l);
-                    if w * l as f64 > (-ps.pos + ps.height) {
+                    if cv.line_width * l as f64 > (-ps.pos + ps.height) {
                       ps.pos = ps.pos - ps.height;
-                      let c = (ps.pos / w) as i32;
-                      ps.pos = w * (c as f64);
+                      let c = (ps.pos / cv.line_width) as i32;
+                      ps.pos = cv.line_width * (c as f64);
                     }
                     //log!("***pos={}", ps.pos);
                     /*
@@ -859,19 +863,29 @@ impl Manager {
               // 1ページ戻る
               FuncType::BkSlash => {
                 if let Some(cv) = &self.canvas {
-                  let w = cv.met * 1.2 + cv.metr + cv.line_margin;
+                  //let w = cv.met * 1.2 + cv.metr + cv.line_margin;
                   if self.is_vertical {
-                    ps.pos = ps.pos - ps.width;
-                    let c = (ps.pos / w) as i32;
-                    ps.pos = w * (c as f64);
+                    let mut cur_line = (ps.pos / cv.line_width) as i32;
+                    if cur_line > cv.page_lines {
+                      cur_line -= cv.page_lines;
+                    } else {
+                      cur_line = 0;
+                    }
+                    ps.pos = cv.line_width * cur_line as f64;
+                    /*
+                    //let page_lines =
+                    ps.pos -= ps.width;
+                    let c = (ps.pos / cv.line_width) as i32;
+                    ps.pos = cv.line_width * (c as f64);
 
                     if ps.pos < 0.0 {
                       ps.pos = 0.0;
                     }
+                    */
                   } else {
-                    ps.pos = ps.pos + ps.height;
-                    let c = (ps.pos / w) as i32;
-                    ps.pos = w * (c as f64);
+                    ps.pos += ps.height;
+                    let c = (ps.pos / cv.line_width) as i32;
+                    ps.pos = cv.line_width * (c as f64);
 
                     if ps.pos > 0.0 {
                       ps.pos = 0.0;
@@ -888,6 +902,30 @@ impl Manager {
 
               // 末尾に進む
               FuncType::FdBottom => {
+                if let Some(cv) = &self.canvas {
+                  let l = ps.count_lines();
+                  if self.is_vertical {
+                    //if cv.line_width * l as f64 > (ps.pos + ps.width) {
+                    let mut cur_line = (ps.pos / cv.line_width) as usize;
+                    loop {
+                      if cur_line + cv.page_lines as usize >= l {
+                        break;
+                      }
+                      cur_line += cv.page_lines as usize;
+                    }
+                    ps.pos = cv.line_width * cur_line as f64;
+                    //}
+                  } else {
+                    //log!("***pos={} height={} w={} l={}", ps.pos, ps.height, w, l);
+                  }
+
+                  if let Err(e) = self.draw() {
+                    return Err(e);
+                  }
+                } else {
+                  return Err("ERR_GET_CANVAS");
+                }
+                /*
                 if self.is_vertical {
                   ps.pos = ps.panel_width - (ps.width * 0.6);
 
@@ -905,6 +943,7 @@ impl Manager {
                 if let Err(e) = self.draw() {
                   return Err(e);
                 }
+                */
               }
 
               // 先頭に戻る

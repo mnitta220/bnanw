@@ -26,6 +26,7 @@ pub struct Canvas {
   pub ruby_pt: i32,
   pub ruby_part: String,
   pub line_width: f64,
+  pub page_lines: i32,
 }
 
 impl Canvas {
@@ -67,21 +68,22 @@ impl Canvas {
     let line_margin: f64;
     let char_count: usize;
     let char_width: f64;
+    let page_lines: i32;
     let x3 = x2 - met * 0.5;
     let y3 = y2 - met * 0.5;
 
     if is_vertical {
       y2 -= padding;
       //let c = (w / (met * 1.72)) as i32;
-      let c = (x2 / (met * 1.2 + metr)) as i32;
+      page_lines = (x2 / (met * 1.2 + metr)) as i32;
       //line_margin = (x2 - 20.0) / c as f64 - met * 1.75;
-      line_margin = (x2 - (met * 1.2 + metr) * (c as f64)) / (c as f64);
+      line_margin = (x2 - (met * 1.2 + metr) * (page_lines as f64)) / (page_lines as f64);
       char_count = ((y3 - y1) / met) as usize;
       char_width = (y3 - y1) / char_count as f64;
     } else {
       x2 -= padding;
-      let c = (h / (met * 1.72)) as i32;
-      line_margin = (h - (met * 1.72) * (c as f64)) / (c as f64);
+      page_lines = (h / (met * 1.72)) as i32;
+      line_margin = (h - (met * 1.72) * (page_lines as f64)) / (page_lines as f64);
       char_count = ((x3 - x1) / met) as usize;
       char_width = (x3 - x1) / char_count as f64;
     }
@@ -113,6 +115,7 @@ impl Canvas {
       ruby_pt,
       ruby_part,
       line_width: met * 1.2 + metr + line_margin,
+      page_lines,
     }
   }
 
