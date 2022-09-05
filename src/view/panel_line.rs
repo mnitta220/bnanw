@@ -268,7 +268,6 @@ impl PanelLine {
 
   fn sep_lines(&mut self, line_width: f64, cv: &canvas::Canvas) {
     //log!("***PanelLine.sep_lines line_width={}", line_width);
-    /**/
     self.lines.clear();
     let mut tc: panel_token::PanelToken;
     let mut vl = view_line::ViewLine::new();
@@ -286,7 +285,6 @@ impl PanelLine {
     let mut y = cv.y1 + self.indent;
 
     for token in self.ptokens.iter() {
-      //log!("***token={}", token.to_string());
       if token.ty == token::TokenType::Slash {
         continue;
       }
@@ -913,25 +911,33 @@ impl PanelLine {
                           let mut xr = x + cv.met * 1.1 + cv.metr * 0.5;
                           let mut yr = y + rw * 0.5;
                           let ruby_font_size = cv.ruby_font_size_from_width(rw);
+                          let ruby_diff: f64;
+                          if self.ty > 0 && self.ty % 2 == 0 {
+                            ruby_diff = cv.char_width * 0.5;
+                          } else {
+                            ruby_diff = 0.0;
+                          }
                           if ruby_font_size.0 > 0 {
                             cv.context
                               .set_font(&format!("{}{}", ruby_font_size.0, cv.ruby_part));
                             for r in rs {
                               for c in r.word.chars() {
                                 if black == false {
-                                  if yr > cv.y3 + ruby_font_size.1 * 0.4 {
-                                    yr = yr - cv.y3 + cv.y1 + self.indent; // + ruby_font_size.1;
-                                    xr -= cv.met * 1.2 + cv.metr + cv.line_margin;
+                                  if yr + ruby_diff > cv.y3 + ruby_font_size.1 * 0.4 {
+                                    yr = yr - cv.y3 + cv.y1 + self.indent + ruby_diff; // + ruby_font_size.1;
+                                    xr -= cv.line_width;
                                   }
                                   match c {
                                     '「' | '」' | '『' | '』' | '（' | '）' | '【' | '】'
                                     | '［' | '］' | '｛' | '｝' | '…' | '─' | '━' | 'ー' | '＝'
                                     | '～' => {
+                                      cv.context.set_text_baseline("bottom");
                                       cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
                                       cv.context
-                                        .fill_text(&c.to_string(), yr - cv.metr + 2.0, -xr - 1.0)
+                                        .fill_text(&c.to_string(), yr, -xr + (cv.metr * 0.5))
                                         .unwrap();
                                       cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+                                      cv.context.set_text_baseline("middle");
                                     }
 
                                     _ => {
@@ -964,16 +970,19 @@ impl PanelLine {
                           if y + cv.met < cv.y3 {
                             match t.ty {
                               token::TokenType::Special => {
-                                let st = &c.to_string();
-                                let w3 = cv.context.measure_text(st).unwrap().width();
-                                let w3 = (cv.met - w3) * 0.5;
-                                cv.context.fill_text(st, x + w3, y).unwrap();
+                                cv.context
+                                  .fill_text(&c.to_string(), x + diff, y + diff2)
+                                  .unwrap();
                               }
 
                               token::TokenType::Yousoku => {
+                                cv.context.set_text_baseline("top");
+                                cv.context.set_text_align("right");
                                 cv.context
-                                  .fill_text(&c.to_string(), x + (cv.met * 0.1), y - (cv.met * 0.1))
+                                  .fill_text(&c.to_string(), x + cv.met * 1.07, y - cv.met * 0.14)
                                   .unwrap();
+                                cv.context.set_text_baseline("middle");
+                                cv.context.set_text_align("center");
                               }
 
                               _ => {
@@ -985,42 +994,6 @@ impl PanelLine {
                             y += cv.char_width;
                           }
                         }
-                        /*
-                        char_count += 1;
-                        if &l.first_token_idx <= &i || token_idx != 1 {
-                          if cv.char_count >= char_count {
-                            if black == false {
-                              match t.ty {
-                                token::TokenType::Special => {
-                                  let st = &c.to_string();
-                                  let w3 = cv.context.measure_text(st).unwrap().width();
-                                  let w3 = (cv.met - w3) * 0.5;
-                                  cv.context.fill_text(st, x + w3, y).unwrap();
-                                }
-
-                                token::TokenType::Yousoku => {
-                                  cv.context
-                                    .fill_text(
-                                      &c.to_string(),
-                                      x + (cv.met * 0.1),
-                                      y - (cv.met * 0.1),
-                                    )
-                                    .unwrap();
-                                }
-
-                                _ => {
-                                  cv.context
-                                    .fill_text(&c.to_string(), x + diff, y + diff2)
-                                    .unwrap();
-                                }
-                              }
-                            }
-                            y += cv.char_width;
-                          }
-                        } else {
-                          char_count -= 1;
-                        }
-                        */
                         i += 1;
                       }
                     }
