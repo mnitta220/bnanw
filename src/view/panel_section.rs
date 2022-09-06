@@ -98,14 +98,9 @@ impl panel::Panel for PanelSection {
       }
     }
 
-    //if is_hide_block == false {
-    //  self.draw_block(cv, diff, is_dark);
-    //}
-
     if self.is_vertical {
       let mut x = self.pos + cv.width - cv.line_margin * 0.1 - cv.metr - cv.met * 1.1;
 
-      //if is_black {
       x += diff;
 
       for l in &self.plines {
@@ -142,7 +137,6 @@ impl panel::Panel for PanelSection {
           x -= cv.line_width;
         }
       }
-      //}
     } else {
       let mut y = self.pos + cv.met * 1.1 + cv.metr + cv.y1;
 

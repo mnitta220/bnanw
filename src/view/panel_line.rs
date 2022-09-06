@@ -286,6 +286,8 @@ impl PanelLine {
 
     for token in self.ptokens.iter() {
       if token.ty == token::TokenType::Slash {
+        tc = panel_token::PanelToken::clone(token);
+        vl.ptokens.push(tc);
         continue;
       }
       if token.ty == token::TokenType::Alpha
@@ -710,16 +712,14 @@ impl PanelLine {
         cv.context.set_fill_style(&JsValue::from_str("#000000"));
       }
     }
-    //log!("***draw_line: 1");
 
     cv.context.set_font(font);
     cv.context.set_text_baseline("middle");
     cv.context.set_text_align("center");
 
     if self.ty == manager::DOC_TOP {
-      //log!("***draw_line: 1.2");
       let w = cv.context.measure_text("Top").unwrap().width();
-      let y = cv.y2 - w;
+      let y = cv.y3 - cv.met * 0.1; //2 - w;
 
       if is_contents {
         if is_current {
@@ -738,17 +738,19 @@ impl PanelLine {
           cv.context.set_fill_style(&JsValue::from_str("#0000ff"));
         }
 
-        let area = area::Area::new(manager::DOC_TOP, 0, x, y, x + bw, cv.y2);
+        let area = area::Area::new(manager::DOC_TOP, 0, x - cv.met * 0.1, y - w, x + bw, y);
         areas.push(area);
       }
       if is_hide_block == false {
         cv.draw_block(x, is_dark);
       }
 
+      cv.context.set_text_align("right");
       cv.context.set_font(&cv.con_font);
       cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
       cv.context.fill_text("Top", y, -x - diff).unwrap();
       cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
+      cv.context.set_text_align("center");
 
       x -= cv.line_width;
     } else if self.ptokens.len() == 0 {
@@ -758,37 +760,23 @@ impl PanelLine {
       }
       x -= cv.line_width;
     } else {
-      //log!("***draw_line: 2");
       let mut is_first = true;
+      let mut black = false;
 
       for l in &self.lines {
-        let mut char_count = 0;
         area_x1 = x;
 
         if x + cv.met > 0.0 && x < cv.width {
           let mut y = cv.y1 + self.indent;
-          //let spc: f64 = 1.0;
           let mut y1 = cv.y1;
           let mut y2: f64;
-          /*
-          log!(
-            "***draw_line: 3 y={} indent={} char_width={} met={}",
-            y,
-            self.indent,
-            cv.char_width,
-            cv.met
-          );
-          */
-          //if self.ty > 0 && l.first {
-          //  y += cv.met * (self.ty - 1) as f64;
-          //}
 
           if is_contents && (is_gray || is_current) {
             if is_current {
               if is_dark {
                 cv.context.set_fill_style(&JsValue::from_str("#183066"));
               } else {
-                cv.context.set_fill_style(&JsValue::from_str("#dedeff"));
+                cv.context.set_fill_style(&JsValue::from_str("#e4e4ff"));
               }
             } else if is_gray {
               if is_dark {
@@ -799,10 +787,11 @@ impl PanelLine {
             }
 
             if is_first {
-              cv.context.fill_rect(x, 0.0, bw, cv.height);
+              cv.context.fill_rect(x - cv.met * 0.1, 0.0, bw, cv.height);
               is_first = false;
             } else {
-              cv.context.fill_rect(x, 0.0, bw + cv.line_margin, cv.height);
+              cv.context
+                .fill_rect(x - cv.met * 0.1, 0.0, cv.line_width, cv.height);
             }
 
             if is_dark {
@@ -815,45 +804,13 @@ impl PanelLine {
           if is_hide_block == false {
             cv.draw_block(x, is_dark);
           }
-          /*
-          if l.last {
-            log!("***draw_line: 4");
-            match l.align {
-              source::Align::Center | source::Align::Bottom => {
-                let mut w: f64 = 0.0;
 
-                for t in &l.ptokens {
-                  w += t.max_width() + 1.0;
-                }
-
-                w = cv.y2 - cv.y1 - self.indent - w;
-
-                if l.align == source::Align::Center {
-                  y += w * 0.5;
-                } else {
-                  y += w;
-                }
-
-                y1 = y;
-              }
-
-              _ => {}
-            }
-          } else {
-            log!("***draw_line: 5");
-            spc = cv.y2 - cv.y1 - self.indent - l.width;
-
-            if l.count > 2 {
-              spc = spc / (l.count - 1) as f64;
-            }
-          }
-          */
           if is_hide_char == false {
             let mut token_idx = 0;
 
             for t in &l.ptokens {
               token_idx += 1;
-              let mut black = false;
+              //let mut black = false;
 
               if is_black {
                 if self.source > black_line || (self.source == black_line && t.seq >= black_token) {
@@ -871,20 +828,15 @@ impl PanelLine {
                     cv.context.set_text_baseline("ideographic");
                     cv.context.set_text_align("left");
                     cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
-                    //cv.context.fill_text(&t.word, y + 3.0, -x - 4.0).unwrap();
                     cv.context
-                      .fill_text(
-                        &t.word,
-                        y, /*+ diff2 + (cv.met * 0.18)*/
-                        -x + (cv.met * 0.08),
-                      )
+                      .fill_text(&t.word, y, -x + (cv.met * 0.08))
                       .unwrap();
                     cv.context.rotate(-std::f64::consts::PI / 2.0).unwrap();
                     cv.context.set_text_baseline("middle");
                     cv.context.set_text_align("center");
                   }
 
-                  y += t.width; // cv.char_width;
+                  y += t.width;
                 }
 
                 _ => {
@@ -924,7 +876,7 @@ impl PanelLine {
                               for c in r.word.chars() {
                                 if black == false {
                                   if yr + ruby_diff > cv.y3 + ruby_font_size.1 * 0.4 {
-                                    yr = yr - cv.y3 + cv.y1 + self.indent + ruby_diff; // + ruby_font_size.1;
+                                    yr = yr - cv.y3 + cv.y1 + self.indent + ruby_diff;
                                     xr -= cv.line_width;
                                   }
                                   match c {
@@ -968,27 +920,29 @@ impl PanelLine {
                       for c in t.word.chars() {
                         if &l.first_token_idx <= &i || token_idx != 1 {
                           if y + cv.met < cv.y3 {
-                            match t.ty {
-                              token::TokenType::Special => {
-                                cv.context
-                                  .fill_text(&c.to_string(), x + diff, y + diff2)
-                                  .unwrap();
-                              }
+                            if black == false {
+                              match t.ty {
+                                token::TokenType::Special => {
+                                  cv.context
+                                    .fill_text(&c.to_string(), x + diff, y + diff2)
+                                    .unwrap();
+                                }
 
-                              token::TokenType::Yousoku => {
-                                cv.context.set_text_baseline("top");
-                                cv.context.set_text_align("right");
-                                cv.context
-                                  .fill_text(&c.to_string(), x + cv.met * 1.07, y - cv.met * 0.14)
-                                  .unwrap();
-                                cv.context.set_text_baseline("middle");
-                                cv.context.set_text_align("center");
-                              }
+                                token::TokenType::Yousoku => {
+                                  cv.context.set_text_baseline("top");
+                                  cv.context.set_text_align("right");
+                                  cv.context
+                                    .fill_text(&c.to_string(), x + cv.met * 1.07, y - cv.met * 0.14)
+                                    .unwrap();
+                                  cv.context.set_text_baseline("middle");
+                                  cv.context.set_text_align("center");
+                                }
 
-                              _ => {
-                                cv.context
-                                  .fill_text(&c.to_string(), x + diff, y + diff2)
-                                  .unwrap();
+                                _ => {
+                                  cv.context
+                                    .fill_text(&c.to_string(), x + diff, y + diff2)
+                                    .unwrap();
+                                }
                               }
                             }
                             y += cv.char_width;
@@ -999,7 +953,6 @@ impl PanelLine {
                     }
 
                     token::TokenType::Zenkigo => {
-                      char_count += 1;
                       if black == false {
                         cv.context.set_text_baseline("bottom");
                         cv.context.rotate(std::f64::consts::PI / 2.0).unwrap();
@@ -1014,7 +967,6 @@ impl PanelLine {
                     }
 
                     token::TokenType::Kuten => {
-                      char_count += 1;
                       if black == false {
                         cv.context
                           .fill_text(&t.word, x + diff + cv.met * 0.6, y - cv.met * 0.1)
@@ -1030,8 +982,8 @@ impl PanelLine {
 
               y2 = y - y1 + 1.0;
 
-              if y1 + y2 > cv.y2 {
-                y2 = cv.y2 - y1;
+              if y1 + y2 > cv.y3 {
+                y2 = cv.y3 + cv.met * 0.3 - y1;
 
                 if y2 < 0.0 {
                   y2 = 0.0;
@@ -1041,7 +993,8 @@ impl PanelLine {
               if t.ty != token::TokenType::Slash && t.ty != token::TokenType::Tatebo {
                 if black {
                   cv.context.set_fill_style(&JsValue::from_str("#555555"));
-                  cv.context.fill_rect(x, y1 + 1.0, bw, y2);
+                  cv.context
+                    .fill_rect(x - cv.met * 0.1, y1 + 1.0, bw, cv.y3 + cv.met * 0.3 - y1);
 
                   if is_dark {
                     cv.context.set_fill_style(&JsValue::from_str("#ffffff"));
@@ -1051,7 +1004,8 @@ impl PanelLine {
                 }
 
                 if is_contents == false {
-                  let area = area::Area::new(self.source, t.seq, x, y1, x + bw, y1 + y2);
+                  let area =
+                    area::Area::new(self.source, t.seq, x - cv.met * 0.1, y1, x + bw, y1 + y2);
                   areas.push(area);
                 }
               }
@@ -1062,6 +1016,19 @@ impl PanelLine {
         }
 
         x -= cv.line_width;
+      }
+
+      if black {
+        cv.context.set_fill_style(&JsValue::from_str("#555555"));
+        loop {
+          if x + cv.met < 0.0 {
+            break;
+          }
+          cv.context
+            .fill_rect(x - cv.met * 0.1, cv.y1, bw, cv.y3 + cv.met * 0.3 - cv.y1);
+
+          x -= cv.line_width;
+        }
       }
 
       if is_contents {
